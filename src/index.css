@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Outfit", sans-serif;
+
+  --color-ocean-500: #0077B6;
+  --color-ocean-600: #023E8A;
+  --color-ocean-700: #03045E;
+  --color-vibrant-gold: #FFD700;
+  --color-gold-glow: #FFEA00;
+  --color-vibrant-rose: #FF006E;
+}
+
+@layer base {
+  html, body, #root {
+    @apply h-full w-full overflow-hidden flex flex-col;
+  }
+  body {
+    @apply bg-[#F8FAFC] text-ocean-700 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
+  
+  .ocean-gradient {
+    @apply bg-gradient-to-br from-ocean-500 via-ocean-600 to-ocean-700;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
