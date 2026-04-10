@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Music, Heart, Settings } from 'lucide-react';
+import { Home, Calendar, Library, Settings } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface BottomTabsProps {
   activeTab: 'home' | 'library' | 'favorites' | 'settings';
@@ -10,13 +11,16 @@ interface BottomTabsProps {
 
 export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   
   return (
     <View style={[
       styles.tabBar, 
       { 
         paddingBottom: Math.max(insets.bottom, 16),
-        height: 64 + Math.max(insets.bottom, 16)
+        height: 64 + Math.max(insets.bottom, 16),
+        backgroundColor: colors.card,
+        borderTopColor: colors.border
       }
     ]}>
       <TouchableOpacity 
@@ -26,10 +30,10 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
       >
         <Home 
           size={24} 
-          color={activeTab === 'home' ? '#023E8A' : '#94A3B8'} 
+          color={activeTab === 'home' ? colors.blue : colors.subtitle} 
           strokeWidth={activeTab === 'home' ? 3 : 2}
         />
-        <Text style={[styles.tabText, activeTab === 'home' && styles.activeTabText]}>
+        <Text style={[styles.tabText, { color: colors.subtitle }, activeTab === 'home' && { color: colors.blue }]}>
           INÍCIO
         </Text>
       </TouchableOpacity>
@@ -39,13 +43,13 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
         onPress={() => onTabPress('library')}
         activeOpacity={0.7}
       >
-        <Music 
+        <Calendar 
           size={24} 
-          color={activeTab === 'library' ? '#023E8A' : '#94A3B8'} 
+          color={activeTab === 'library' ? colors.blue : colors.subtitle} 
           strokeWidth={activeTab === 'library' ? 3 : 2}
         />
-        <Text style={[styles.tabText, activeTab === 'library' && styles.activeTabText]}>
-          LOUVORES
+        <Text style={[styles.tabText, { color: colors.subtitle }, activeTab === 'library' && { color: colors.blue }]}>
+          ESCALA
         </Text>
       </TouchableOpacity>
 
@@ -54,14 +58,13 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
         onPress={() => onTabPress('favorites')}
         activeOpacity={0.7}
       >
-        <Heart 
+        <Library 
           size={24} 
-          color={activeTab === 'favorites' ? '#FF006E' : '#94A3B8'} 
-          fill={activeTab === 'favorites' ? '#FF006E' : 'transparent'}
+          color={activeTab === 'favorites' ? colors.blue : colors.subtitle} 
           strokeWidth={activeTab === 'favorites' ? 3 : 2}
         />
-        <Text style={[styles.tabText, activeTab === 'favorites' && { color: '#FF006E' }]}>
-          FAVORITOS
+        <Text style={[styles.tabText, { color: colors.subtitle }, activeTab === 'favorites' && { color: colors.blue }]}>
+          BIBLIOTECA
         </Text>
       </TouchableOpacity>
 
@@ -72,10 +75,10 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
       >
         <Settings 
           size={24} 
-          color={activeTab === 'settings' ? '#023E8A' : '#94A3B8'} 
+          color={activeTab === 'settings' ? colors.blue : colors.subtitle} 
           strokeWidth={activeTab === 'settings' ? 3 : 2}
         />
-        <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>
+        <Text style={[styles.tabText, { color: colors.subtitle }, activeTab === 'settings' && { color: colors.blue }]}>
           AJUSTES
         </Text>
       </TouchableOpacity>
@@ -86,9 +89,7 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC', // Branco Perolado
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     paddingTop: 12,
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -99,10 +100,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     // Sombra no topo (Android)
     elevation: 24,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     // Garantir que a sombra apareça acima do conteúdo
     zIndex: 1000,
   },

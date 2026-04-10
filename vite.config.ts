@@ -15,7 +15,7 @@ export default defineConfig(({mode}) => {
     resolve: {
       alias: [
         { find: '@', replacement: path.resolve(__dirname, '.') },
-        { find: 'react-native/Libraries/Utilities/codegenNativeComponent', replacement: path.resolve(__dirname, 'src/mocks/codegenNativeComponent.js') },
+        { find: /^(react-native|react-native-web)\/Libraries\/Utilities\/codegenNativeComponent$/, replacement: path.resolve(__dirname, 'src/mocks/codegenNativeComponent.js') },
         { find: /^react-native$/, replacement: 'react-native-web' },
         { find: /^react-native-svg$/, replacement: 'react-native-svg-web' },
       ],
