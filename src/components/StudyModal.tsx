@@ -97,7 +97,11 @@ export default function StudyModal({ song, visible, onClose, onUpdate }: StudyMo
               )}
             </View>
             <TouchableOpacity 
-              onPress={() => song.url ? Linking.openURL(song.url) : null}
+              onPress={() => {
+                if (song.url) {
+                  Linking.openURL(song.url);
+                }
+              }}
               style={[styles.studyPlayBtn, { backgroundColor: isDark ? colors.primary : '#EF4444' }]}
             >
               <Play size={20} color={isDark ? 'black' : 'white'} fill={isDark ? 'black' : 'white'} />

@@ -1,8 +1,72 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ref, set as dbSet, push, onValue, remove, update } from 'firebase/database';
-import { database } from '../lib/firebase';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  doc, 
+  setDoc, 
+  query, 
+  orderBy, 
+  getDoc,
+  writeBatch,
+  Timestamp
+} from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData.map(provider => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  // We don't throw here to avoid crashing the whole app, but we log it clearly
+}
 
 interface Verse {
   text: string;
@@ -22,6 +86,9 @@ export interface Song {
 }
 
 interface AppState {
+  user: { uid: string; email: string | null } | null;
+  userRole: 'admin' | 'user' | null;
+  isAdmin: boolean;
   currentVerse: Verse;
   songs: Song[];
   weeklySelection: {
@@ -36,7 +103,8 @@ interface AppState {
     fontSize: number;
   };
   setRandomVerse: () => void;
-  syncWithFirebase: () => void;
+  setUser: (user: { uid: string; email: string | null } | null) => void;
+  syncWithFirebase: () => (() => void);
   addSong: (song: Omit<Song, 'id' | 'playCount' | 'lastPlayedDate'>) => void;
   updateSong: (songId: string, updates: Partial<Omit<Song, 'id'>>) => void;
   checkAndResetWeeklySetlist: (force?: boolean) => void;
@@ -69,6 +137,9 @@ const initialSongs: Song[] = [];
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
+      user: null,
+      userRole: null,
+      isAdmin: false,
       currentVerse: BIBLIA_CURADA[0],
       songs: initialSongs,
       weeklySelection: { domingo: [], segunda: [] },
@@ -82,60 +153,105 @@ export const useStore = create<AppState>()(
       setRandomVerse: () => set((state) => ({
         currentVerse: BIBLIA_CURADA[Math.floor(Math.random() * BIBLIA_CURADA.length)]
       })),
+      setUser: (user) => set({ user }),
       syncWithFirebase: () => {
-        const songsRef = ref(database, 'songs');
-        const weeklyRef = ref(database, 'weeklySelection');
-        const lastDateRef = ref(database, 'lastSelectionDate');
-
-        onValue(songsRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            const songsList = Object.keys(data).map(key => ({
-              ...data[key],
-              id: key
-            }));
-            set({ songs: songsList });
-          } else {
-            set({ songs: [] });
-          }
+        const { user } = get();
+        
+        // Listen for songs (louvores)
+        const songsPath = 'louvores';
+        const songsQuery = query(collection(db, songsPath), orderBy('playCount', 'desc'));
+        
+        const unsubscribeSongs = onSnapshot(songsQuery, (snapshot) => {
+          const songsList = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id
+          })) as Song[];
+          set({ songs: songsList });
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, songsPath);
         });
 
-        onValue(weeklyRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            set({ weeklySelection: data });
+        // Listen for weekly selection (escalas)
+        const weeklyPath = 'escalas';
+        const unsubscribeWeekly = onSnapshot(doc(db, weeklyPath, 'current'), (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            set({ 
+              weeklySelection: data.selection || { domingo: [], segunda: [] },
+              lastSelectionDate: data.lastSelectionDate || null
+            });
           }
+        }, (error) => {
+          handleFirestoreError(error, OperationType.GET, `${weeklyPath}/current`);
         });
 
-        onValue(lastDateRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            set({ lastSelectionDate: data });
-          }
-        });
-      },
-      addSong: (songData) => {
-        const songsRef = ref(database, 'songs');
-        const newSongRef = push(songsRef);
-        const newSong = {
-          ...songData,
-          playCount: 0,
-          lastPlayedDate: null
+        // Listen for user role if user is logged in
+        let unsubscribeRole = () => {};
+        if (user) {
+          const userPath = `users/${user.uid}`;
+          unsubscribeRole = onSnapshot(doc(db, userPath), (snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.data();
+              const isMasterAdmin = user.email === 'duuhbr12@gmail.com';
+              set({ 
+                userRole: data.role || 'user',
+                isAdmin: data.role === 'admin' || isMasterAdmin
+              });
+            } else {
+              // Initialize user if not exists
+              const isMasterAdmin = user.email === 'duuhbr12@gmail.com';
+              const newUser = {
+                email: user.email,
+                role: isMasterAdmin ? 'admin' : 'user',
+                createdAt: Date.now()
+              };
+              setDoc(doc(db, userPath), newUser).catch(err => {
+                handleFirestoreError(err, OperationType.CREATE, userPath);
+              });
+            }
+          }, (error) => {
+            handleFirestoreError(error, OperationType.GET, userPath);
+          });
+        } else {
+          set({ userRole: null, isAdmin: false });
+        }
+
+        return () => {
+          unsubscribeSongs();
+          unsubscribeWeekly();
+          unsubscribeRole();
         };
-        dbSet(newSongRef, newSong);
       },
-      updateSong: (songId, updates) => {
-        const songRef = ref(database, `songs/${songId}`);
-        update(songRef, updates);
+      addSong: async (songData) => {
+        const songsPath = 'louvores';
+        try {
+          const { user } = get();
+          const newSong = {
+            ...songData,
+            playCount: 0,
+            lastPlayedDate: null,
+            addedBy: user?.uid || 'anonymous',
+            createdAt: Date.now()
+          };
+          await addDoc(collection(db, songsPath), newSong);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, songsPath);
+        }
       },
-      checkAndResetWeeklySetlist: (force = false) => {
+      updateSong: async (songId, updates) => {
+        const songPath = `louvores/${songId}`;
+        try {
+          await updateDoc(doc(db, songPath), updates);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, songPath);
+        }
+      },
+      checkAndResetWeeklySetlist: async (force = false) => {
         const { songs, lastSelectionDate, weeklySelection } = get();
         const now = Date.now();
         const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
         const diff = lastSelectionDate ? now - lastSelectionDate : SEVEN_DAYS;
-        const daysPassed = Math.floor(diff / (24 * 60 * 60 * 1000));
-
         const needsReset = force || !lastSelectionDate || (diff >= SEVEN_DAYS);
 
         if (needsReset) {
@@ -153,33 +269,50 @@ export const useStore = create<AppState>()(
           const selected = candidates.slice(0, 4);
           const selectedIds = selected.map(s => s.id);
 
-          // Update Firebase
           const newWeeklySelection = {
             domingo: selected.slice(0, 2),
             segunda: selected.slice(2, 4)
           };
 
-          dbSet(ref(database, 'weeklySelection'), newWeeklySelection);
-          dbSet(ref(database, 'lastSelectionDate'), now);
+          try {
+            const batch = writeBatch(db);
+            
+            // Update weekly selection doc
+            batch.set(doc(db, 'escalas', 'current'), {
+              selection: newWeeklySelection,
+              lastSelectionDate: now,
+              updatedAt: now
+            });
 
-          selectedIds.forEach(id => {
-            const song = songs.find(s => s.id === id);
-            if (song) {
-              const songRef = ref(database, `songs/${id}`);
-              update(songRef, { 
-                playCount: (song.playCount || 0) + 1, 
-                lastPlayedDate: now 
-              });
-            }
-          });
+            // Update play counts for selected songs
+            selectedIds.forEach(id => {
+              const song = songs.find(s => s.id === id);
+              if (song) {
+                batch.update(doc(db, 'louvores', id), {
+                  playCount: (song.playCount || 0) + 1,
+                  lastPlayedDate: now
+                });
+              }
+            });
+
+            await batch.commit();
+          } catch (error) {
+            handleFirestoreError(error, OperationType.WRITE, 'escalas/current');
+          }
         }
       },
-      incrementPlayCount: (songId) => {
+      incrementPlayCount: async (songId) => {
         const { songs } = get();
         const song = songs.find(s => s.id === songId);
         if (song) {
-          const songRef = ref(database, `songs/${songId}`);
-          update(songRef, { playCount: (song.playCount || 0) + 1 });
+          const songPath = `louvores/${songId}`;
+          try {
+            await updateDoc(doc(db, songPath), { 
+              playCount: (song.playCount || 0) + 1 
+            });
+          } catch (error) {
+            handleFirestoreError(error, OperationType.UPDATE, songPath);
+          }
         }
       },
       toggleFavorite: (songId) => set((state) => ({
@@ -187,14 +320,32 @@ export const useStore = create<AppState>()(
           ? state.favorites.filter(id => id !== songId)
           : [...state.favorites, songId]
       })),
-      deleteSong: (songId) => {
-        const songRef = ref(database, `songs/${songId}`);
-        remove(songRef);
+      deleteSong: async (songId) => {
+        const songPath = `louvores/${songId}`;
+        try {
+          await deleteDoc(doc(db, songPath));
+          // Clean up local favorites
+          set((state) => ({
+            favorites: state.favorites.filter(id => id !== songId)
+          }));
+        } catch (error) {
+          handleFirestoreError(error, OperationType.DELETE, songPath);
+        }
       },
-      clearAllSongs: () => {
-        remove(ref(database, 'songs'));
-        remove(ref(database, 'weeklySelection'));
-        remove(ref(database, 'lastSelectionDate'));
+      clearAllSongs: async () => {
+        const { songs } = get();
+        try {
+          const batch = writeBatch(db);
+          songs.forEach(song => {
+            batch.delete(doc(db, 'louvores', song.id));
+          });
+          batch.delete(doc(db, 'escalas', 'current'));
+          await batch.commit();
+          // Clear local favorites
+          set({ favorites: [] });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, 'louvores');
+        }
       },
       updateSettings: (newSettings) => set((state) => ({
         settings: { ...state.settings, ...newSettings }

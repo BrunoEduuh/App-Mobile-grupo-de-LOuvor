@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["email", "role", "createdAt"]
+    },
+    "Louvor": {
+      "title": "Louvor",
+      "description": "Song in the repertoire",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "url": { "type": "string" },
+        "theme": { "type": "string" },
+        "lyrics": { "type": "string" },
+        "playCount": { "type": "number" },
+        "lastPlayedDate": { "type": "number" },
+        "addedBy": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["title", "url", "theme", "playCount", "addedBy", "createdAt"]
+    },
+    "Escala": {
+      "title": "Escala",
+      "description": "Weekly schedule",
+      "type": "object",
+      "properties": {
+        "selection": { "type": "object" },
+        "lastSelectionDate": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["selection", "lastSelectionDate", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/louvores/{louvorId}": {
+      "schema": "Louvor",
+      "description": "Repertoire of songs"
+    },
+    "/escalas/{escalaId}": {
+      "schema": "Escala",
+      "description": "Weekly scales"
+    }
+  }
+}

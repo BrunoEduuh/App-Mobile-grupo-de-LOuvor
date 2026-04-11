@@ -1,12 +1,21 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Switch, ScrollView } from 'react-native';
-import { Settings as SettingsIcon, Bell, Moon, Type, Info, ChevronRight, LogOut, Sun, Monitor } from 'lucide-react';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Switch, ScrollView, Modal, SafeAreaView } from 'react-native';
+import { Settings as SettingsIcon, Bell, Moon, Type, Info, ChevronRight, LogOut, Sun, Monitor, X, AlertTriangle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../context/ThemeContext';
+import { auth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Settings() {
-  const { settings, updateSettings } = useStore();
+  const { settings, updateSettings, user } = useStore();
   const { colors, isDark } = useTheme();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogout = () => {
+    signOut(auth);
+    setShowLogoutConfirm(false);
+  };
 
   const SettingItem = ({ 
     icon: Icon, 
@@ -153,9 +162,15 @@ export default function Settings() {
               subtitle="v1.0.5 - Firmados em Cristo"
             />
             <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-            <TouchableOpacity style={styles.logoutButton}>
+            <TouchableOpacity 
+              style={styles.logoutButton}
+              onPress={() => setShowLogoutConfirm(true)}
+            >
               <LogOut size={20} color="#FF006E" />
-              <Text style={[styles.logoutText, { fontSize: settings.fontSize }]}>Sair da Conta</Text>
+              <View style={{ flex: 1, marginLeft: 16 }}>
+                <Text style={[styles.logoutText, { fontSize: settings.fontSize }]}>Sair da Conta</Text>
+                <Text style={{ fontSize: 10, color: colors.subtitle, fontWeight: '600' }}>{user?.email}</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -165,6 +180,49 @@ export default function Settings() {
           <Text style={[styles.footerSubtext, { color: colors.subtitle, opacity: 0.6, fontSize: Math.max(8, settings.fontSize * 0.55) }]}>© 2026 Firmados em Cristo</Text>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showLogoutConfirm}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLogoutConfirm(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{ width: '100%', maxWidth: 340, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          >
+            <View style={[styles.confirmCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.warningIconBg, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}>
+                <LogOut size={32} color="#EF4444" />
+              </View>
+              
+              <Text style={[styles.confirmTitle, { color: colors.text }]}>Sair do Aplicativo?</Text>
+              <Text style={[styles.confirmMessage, { color: colors.subtitle }]}>
+                Sua sessão será encerrada e você precisará entrar novamente para ver o repertório.
+              </Text>
+
+              <View style={styles.confirmActions}>
+                <TouchableOpacity 
+                  onPress={() => setShowLogoutConfirm(false)}
+                  style={[styles.cancelBtn, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}
+                >
+                  <Text style={[styles.cancelBtnText, { color: colors.text }]}>Voltar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  onPress={handleLogout}
+                  style={[styles.confirmBtn, { backgroundColor: '#EF4444' }]}
+                >
+                  <Text style={styles.confirmBtnText}>Sair</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </motion.div>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -299,5 +357,68 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 10,
     marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  confirmCard: {
+    width: '100%',
+    padding: 32,
+    borderRadius: 40,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  warningIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  confirmBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmBtnText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

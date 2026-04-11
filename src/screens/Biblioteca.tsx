@@ -7,7 +7,7 @@ import StudyModal from '../components/StudyModal';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Biblioteca() {
-  const { songs, addSong, favorites, toggleFavorite, updateSong, deleteSong, clearAllSongs, settings } = useStore();
+  const { songs, addSong, favorites, toggleFavorite, updateSong, deleteSong, clearAllSongs, settings, isAdmin } = useStore();
   const { colors, isDark } = useTheme();
 // ... (keep rest of state)
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,12 +49,14 @@ export default function Biblioteca() {
         setIsSearchingLyrics(true);
         try {
           const response = await fetch(`https://api.vagalume.com.br/search.php?art=${encodeURIComponent(artist)}&mus=${encodeURIComponent(title)}`);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           const data = await response.json();
           if (data.type === 'exact' || data.type === 'aprox') {
             finalLyrics = data.mus[0].text;
           }
         } catch (e) {
-          console.error("Erro na busca final de letra:", e);
+          console.warn("Erro na busca final de letra (Vagalume pode estar fora do ar ou bloqueado):", e);
+          // Não bloqueia o salvamento se a busca falhar
         } finally {
           setIsSearchingLyrics(false);
         }
@@ -118,21 +120,27 @@ export default function Biblioteca() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos de timeout
 
-      const lyricsUrl = `https://api.vagalume.com.br/search.php?art=${encodeURIComponent(artist)}&mus=${encodeURIComponent(title)}`;
-      const response = await fetch(lyricsUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      
-      const data = await response.json();
-      
-      if (data.type === 'exact' || data.type === 'aprox') {
-        const lyrics = data.mus[0].text;
-        // Atualiza o título para o padrão encontrado se o usuário não usou o padrão (Música - Artista)
-        if (!newSong.title.includes(' - ')) {
-          setNewSong(prev => ({ ...prev, title: `${title} - ${artist}`, lyrics }));
+      try {
+        const lyricsUrl = `https://api.vagalume.com.br/search.php?art=${encodeURIComponent(artist)}&mus=${encodeURIComponent(title)}`;
+        const response = await fetch(lyricsUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        
+        if (data.type === 'exact' || data.type === 'aprox') {
+          const lyrics = data.mus[0].text;
+          // Atualiza o título para o padrão encontrado se o usuário não usou o padrão (Música - Artista)
+          if (!newSong.title.includes(' - ')) {
+            setNewSong(prev => ({ ...prev, title: `${title} - ${artist}`, lyrics }));
+          } else {
+            setNewSong(prev => ({ ...prev, lyrics }));
+          }
         } else {
-          setNewSong(prev => ({ ...prev, lyrics }));
+          setShowManualSearchConfirm(true);
         }
-      } else {
+      } catch (e) {
+        console.warn("Erro na busca de letra (Vagalume):", e);
         setShowManualSearchConfirm(true);
       }
     } catch (error) {
@@ -227,12 +235,14 @@ export default function Biblioteca() {
               />
             </motion.div>
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => handleDeleteSong(item.id, item.title)}
-            style={[styles.deleteButton, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}
-          >
-            <Trash2 size={18} color="#EF4444" />
-          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity 
+              onPress={() => handleDeleteSong(item.id, item.title)}
+              style={[styles.deleteButton, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}
+            >
+              <Trash2 size={18} color="#EF4444" />
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </motion.div>
@@ -250,7 +260,7 @@ export default function Biblioteca() {
             </View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Biblioteca</Text>
           </View>
-          {songs.length > 0 && (
+          {isAdmin && songs.length > 0 && (
             <TouchableOpacity onPress={handleClearAll} style={[styles.clearAllBtn, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}>
               <Trash2 size={16} color="#EF4444" />
               <Text style={styles.clearAllText}>Limpar</Text>

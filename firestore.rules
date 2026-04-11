@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - email: string (required)
+    //   - role: string (required, 'admin' or 'user')
+    //   - createdAt: number (required)
+    //
+    // Collection: louvores
+    // Document ID: {louvorId}
+    // Fields:
+    //   - title: string (required, size < 200)
+    //   - artist: string (optional, size < 100)
+    //   - url: string (required, isValidUrl)
+    //   - theme: string (required)
+    //   - lyrics: string (optional)
+    //   - playCount: number (required)
+    //   - lastPlayedDate: number (optional, null)
+    //   - addedBy: string (required, userId)
+    //   - createdAt: number (required)
+    //
+    // Collection: escalas
+    // Document ID: current
+    // Fields:
+    //   - selection: map (required)
+    //   - lastSelectionDate: number (required)
+    //   - updatedAt: number (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "duuhbr12@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
+             data.keys().hasOnly(['email', 'role', 'createdAt']) &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             data.createdAt is number;
+    }
+
+    function isValidLouvor(data) {
+      return data.keys().hasAll(['title', 'url', 'theme', 'playCount', 'addedBy', 'createdAt']) &&
+             data.keys().hasOnly(['title', 'artist', 'url', 'theme', 'lyrics', 'playCount', 'lastPlayedDate', 'addedBy', 'createdAt']) &&
+             data.title is string && data.title.size() < 200 &&
+             (!('artist' in data) || (data.artist is string && data.artist.size() < 100)) &&
+             isValidUrl(data.url) &&
+             data.theme is string &&
+             (!('lyrics' in data) || data.lyrics is string) &&
+             data.playCount is number &&
+             (!('lastPlayedDate' in data) || data.lastPlayedDate == null || data.lastPlayedDate is number) &&
+             data.addedBy == request.auth.uid &&
+             data.createdAt is number;
+    }
+
+    function isValidEscala(data) {
+      return data.keys().hasAll(['selection', 'lastSelectionDate', 'updatedAt']) &&
+             data.keys().hasOnly(['selection', 'lastSelectionDate', 'updatedAt']) &&
+             data.selection is map &&
+             data.lastSelectionDate is number &&
+             data.updatedAt is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    (isOwner(userId) && request.resource.data.role == 'user' || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    (isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role));
+      allow delete: if isAdmin();
+    }
+
+    match /louvores/{louvorId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidLouvor(request.resource.data);
+      allow update: if isAuthenticated() && isValidLouvor(request.resource.data) && 
+                    (isAdmin() || resource.data.addedBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /escalas/{escalaId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

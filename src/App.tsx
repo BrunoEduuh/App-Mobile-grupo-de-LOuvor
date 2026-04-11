@@ -1,23 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { motion, AnimatePresence } from 'motion/react';
 import HomeScreen from './screens/HomeScreen';
 import Escala from './screens/Escala';
 import Biblioteca from './screens/Biblioteca';
 import Settings from './screens/Settings';
+import Login from './screens/Login';
 import BottomTabs from './components/BottomTabs';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { useStore } from './store/useStore';
+import { auth } from './lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDocFromServer } from 'firebase/firestore';
+import { db } from './lib/firebase';
+
+async function testFirestoreConnection() {
+  try {
+    // Test connection by trying to fetch a non-existent doc from server
+    await getDocFromServer(doc(db, '_connection_test_', 'ping'));
+    console.log("✅ Firestore connection verified.");
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("❌ Firestore connection failed: Client is offline or configuration is incorrect.");
+    } else {
+      // Other errors (like permission denied) actually mean we ARE connected to the server
+      console.log("✅ Firestore server reached (Response: " + (error instanceof Error ? error.message : 'Unknown') + ")");
+    }
+  }
+}
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<'home' | 'library' | 'favorites' | 'settings'>('home');
+  const [isInitializing, setIsInitializing] = useState(true);
   const { colors, isDark } = useTheme();
-  const { syncWithFirebase } = useStore();
+  const { syncWithFirebase, setUser, user } = useStore();
 
   useEffect(() => {
-    syncWithFirebase();
+    testFirestoreConnection();
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
+      } else {
+        setUser(null);
+      }
+      setIsInitializing(false);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!isInitializing) {
+      const unsubscribe = syncWithFirebase();
+      return () => {
+        if (typeof unsubscribe === 'function') unsubscribe();
+      };
+    }
+  }, [isInitializing, user?.uid]);
+
+  if (isInitializing) {
+    return (
+      <View style={[styles.root, { backgroundColor: isDark ? '#020617' : '#F1F5F9', justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#03045E" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={[styles.root, { backgroundColor: isDark ? '#020617' : '#F1F5F9' }]}>
+        <View style={styles.appContainer}>
+          <Login />
+        </View>
+      </View>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {

@@ -7,19 +7,39 @@ import StudyModal from '../components/StudyModal';
 import { useTheme } from '../context/ThemeContext';
 
 const REFLECTIONS = [
-// ... (keep reflections)
   { text: "A adoração não é sobre o quão bem tocamos, mas sobre para Quem tocamos.", author: "Mestre de Música" },
   { text: "O ensaio é o momento de errar; o culto é o momento de se entregar.", author: "Ministro de Louvor" },
   { text: "Mantenha seu instrumento afinado, mas sua alma ainda mais.", author: "Teólogo Musical" },
   { text: "A simplicidade muitas vezes comunica mais do que o virtuosismo.", author: "Arranjador" },
-  { text: "Louvor é a Palavra de Deus cantada. Seja fiel às Escrituras.", author: "Firmados em Cristo" }
+  { text: "Louvor é a Palavra de Deus cantada. Seja fiel às Escrituras.", author: "Firmados em Cristo" },
+  { text: "Seu talento pode te levar ao altar, mas só a santidade te mantém lá.", author: "Ministro de Louvor" },
+  { text: "Deus não procura grandes músicos, Ele procura verdadeiros adoradores.", author: "Teólogo Musical" },
+  { text: "A música é o veículo, mas a mensagem é a cruz.", author: "Firmados em Cristo" },
+  { text: "Antes de abrir o instrumento, abra o coração em oração.", author: "Mestre de Música" },
+  { text: "O brilho do músico nunca deve ofuscar a glória de Deus.", author: "Arranjador" },
+  { text: "Adorar é um estilo de vida, não um evento de domingo.", author: "Ministro de Louvor" },
+  { text: "A técnica sem unção é apenas barulho; a unção sem técnica é desleixo.", author: "Mestre de Música" },
+  { text: "Seja o primeiro a ser ministrado pela canção que você vai tocar.", author: "Teólogo Musical" },
+  { text: "O maior solo que você pode fazer é o da rendição total.", author: "Arranjador" },
+  { text: "Nossa meta é que as pessoas saiam do culto falando de Jesus, não da banda.", author: "Firmados em Cristo" }
 ];
 
 const MUSICAL_TIPS = [
   { title: "Dinâmica", text: "Nem tudo precisa ser forte o tempo todo. Aprecie o piano e o forte." },
   { title: "Escuta Ativa", text: "Ouça os outros instrumentos. O louvor é um corpo unido, não um solo." },
   { title: "O Silêncio", text: "O silêncio também é música. Saiba quando não tocar para dar espaço à voz." },
-  { title: "Preparação", text: "Estude seu instrumento em casa para que no ensaio possamos unir os corações." }
+  { title: "Preparação", text: "Estude seu instrumento em casa para que no ensaio possamos unir os corações." },
+  { title: "Vocal: Respiração", text: "Respire pelo diafragma para sustentar as notas sem forçar as cordas vocais." },
+  { title: "Vocal: Unidade", text: "No backing vocal, tente 'colar' sua voz na do líder. Não tente se destacar." },
+  { title: "Violão/Guitarra", text: "Menos é mais. Deixe espaço para o teclado e não embole as frequências médias." },
+  { title: "Baixo: O Alicerce", text: "Sua função é unir a harmonia ao ritmo. Seja preciso e constante com o bumbo." },
+  { title: "Bateria: Intensidade", text: "Controle sua força. A bateria deve conduzir a energia, não ensurdecer a igreja." },
+  { title: "Teclado: Texturas", text: "Use pads para preencher os vazios e pianos para marcar a harmonia com clareza." },
+  { title: "Vocal: Dicção", text: "Pronuncie bem as palavras. A igreja precisa entender a mensagem que está sendo cantada." },
+  { title: "Guitarra: Timbre", text: "Busque um timbre que se encaixe no mix da banda, sem excesso de distorção." },
+  { title: "Ritmo: Metrônomo", text: "Pratique com metrônomo. A firmeza rítmica traz segurança para toda a igreja cantar." },
+  { title: "Vocal: Expressão", text: "Cante com verdade. Sua expressão facial deve refletir a alegria ou a reverência da letra." },
+  { title: "Instrumental: Espaço", text: "Saiba quando parar. Às vezes, o melhor arranjo é aquele onde você não toca." }
 ];
 
 export default function HomeScreen() {
@@ -67,7 +87,11 @@ export default function HomeScreen() {
           <Text style={[styles.miniSongTheme, { color: colors.subtitle }]}>{song.theme}</Text>
         </View>
         <TouchableOpacity 
-          onPress={() => song.url ? Linking.openURL(song.url) : null}
+          onPress={() => {
+            if (song.url) {
+              Linking.openURL(song.url);
+            }
+          }}
           style={[styles.playButton, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}
         >
           <Play size={14} color="#EF4444" fill="#EF4444" />
@@ -186,7 +210,7 @@ export default function HomeScreen() {
               <BarChart3 size={18} color={isDark ? '#F472B6' : '#DB2777'} />
             </View>
             <View>
-              <Text style={[styles.statValue, { color: colors.text }]}>{favorites.length}</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{favoriteSongs.length}</Text>
               <Text style={[styles.statLabel, { color: colors.subtitle }]}>FAVORITOS</Text>
             </View>
           </TouchableOpacity>
@@ -395,13 +419,18 @@ const styles = StyleSheet.create({
   },
   miniSongCard: {
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   miniSongIcon: {
     backgroundColor: '#F0F9FF',

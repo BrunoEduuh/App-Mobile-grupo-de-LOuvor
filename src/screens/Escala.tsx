@@ -7,7 +7,7 @@ import StudyModal from '../components/StudyModal';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Escala() {
-  const { weeklySelection, favorites, toggleFavorite, updateSong, settings } = useStore();
+  const { weeklySelection, favorites, toggleFavorite, updateSong, settings, isAdmin, checkAndResetWeeklySetlist } = useStore();
   const { colors, isDark } = useTheme();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
 
@@ -97,6 +97,15 @@ export default function Escala() {
             </View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Escala da Semana</Text>
           </View>
+          {isAdmin && (
+            <TouchableOpacity 
+              onPress={() => checkAndResetWeeklySetlist(true)}
+              style={[styles.resetButton, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}
+            >
+              <Edit3 size={16} color={colors.primary} />
+              <Text style={[styles.resetText, { color: colors.primary }]}>Gerenciar</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -148,7 +157,21 @@ const styles = StyleSheet.create({
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 24,
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+  },
+  resetText: {
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   headerIconBg: {
     padding: 8,
