@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, ScrollView, Linking, Modal, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, ScrollView, Linking, Modal, FlatList, Image } from 'react-native';
 import { Anchor, Sparkles, RefreshCw, Calendar, Music, Play, ChevronRight, Unlock, Lightbulb, BarChart3, Heart, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useStore, Song } from '../store/useStore';
@@ -116,8 +116,13 @@ export default function HomeScreen() {
             <Text style={[styles.welcomeText, { color: colors.subtitle }]}>Paz do Senhor,</Text>
             <Text style={[styles.brandText, { color: colors.text }]}>Firmados em Cristo</Text>
           </View>
-          <TouchableOpacity style={[styles.profileIcon, { backgroundColor: colors.card }]}>
-            <Anchor size={24} color={colors.primary} />
+          <TouchableOpacity style={[styles.profileIcon, { backgroundColor: 'transparent' }]}>
+            <Image 
+              source={{ uri: 'https://storage.googleapis.com/birdseye-free-public/2025/04/13/17/37/input_file_0.png' }} 
+              style={{ width: 40, height: 40 }}
+              resizeMode="contain"
+              referrerPolicy="no-referrer"
+            />
           </TouchableOpacity>
         </View>
 
@@ -321,14 +326,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   profileIcon: {
-    backgroundColor: 'white',
-    padding: 12,
+    padding: 0,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    overflow: 'hidden',
   },
   verseCard: {
     backgroundColor: 'white',

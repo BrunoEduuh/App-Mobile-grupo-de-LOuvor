@@ -74,8 +74,13 @@ export default function Login() {
                 transition={{ duration: 0.8 }}
                 style={styles.header}
               >
-                <View style={[styles.logoBg, { backgroundColor: colors.primary }]}>
-                  <Anchor size={48} color={isDark ? "black" : "#FFD700"} />
+                <View style={[styles.logoBg, { backgroundColor: 'transparent' }]}>
+                  <Image 
+                    source={{ uri: 'https://storage.googleapis.com/birdseye-free-public/2025/04/13/17/37/input_file_0.png' }} 
+                    style={{ width: 150, height: 150 }}
+                    resizeMode="contain"
+                    referrerPolicy="no-referrer"
+                  />
                 </View>
                 <Text style={[styles.title, { color: isDark ? 'white' : colors.text }]}>Firmados em Cristo</Text>
                 <View style={styles.badge}>
@@ -245,12 +250,11 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoBg: {
-    width: 96,
-    height: 96,
-    borderRadius: 32,
+    width: 150,
+    height: 150,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.2,

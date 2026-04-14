@@ -16,6 +16,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 enum OperationType {
   CREATE = 'create',
@@ -155,53 +156,68 @@ export const useStore = create<AppState>()(
       })),
       setUser: (user) => set({ user }),
       syncWithFirebase: () => {
-        const { user } = get();
-        
-        // Listen for songs (louvores)
-        const songsPath = 'louvores';
-        const songsQuery = query(collection(db, songsPath), orderBy('playCount', 'desc'));
-        
-        const unsubscribeSongs = onSnapshot(songsQuery, (snapshot) => {
-          const songsList = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id
-          })) as Song[];
-          set({ songs: songsList });
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, songsPath);
-        });
+        let unsubscribeListeners: (() => void) | null = null;
 
-        // Listen for weekly selection (escalas)
-        const weeklyPath = 'escalas';
-        const unsubscribeWeekly = onSnapshot(doc(db, weeklyPath, 'current'), (snapshot) => {
-          if (snapshot.exists()) {
-            const data = snapshot.data();
-            set({ 
-              weeklySelection: data.selection || { domingo: [], segunda: [] },
-              lastSelectionDate: data.lastSelectionDate || null
-            });
+        const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+          // Clean up previous listeners if they exist
+          if (unsubscribeListeners) {
+            unsubscribeListeners();
+            unsubscribeListeners = null;
           }
-        }, (error) => {
-          handleFirestoreError(error, OperationType.GET, `${weeklyPath}/current`);
-        });
 
-        // Listen for user role if user is logged in
-        let unsubscribeRole = () => {};
-        if (user) {
-          const userPath = `users/${user.uid}`;
-          unsubscribeRole = onSnapshot(doc(db, userPath), (snapshot) => {
+          if (!firebaseUser) {
+            set({ 
+              songs: [], 
+              weeklySelection: { domingo: [], segunda: [] },
+              userRole: null,
+              isAdmin: false
+            });
+            return;
+          }
+
+          // Listen for songs (louvores)
+          const songsPath = 'louvores';
+          const songsQuery = query(collection(db, songsPath), orderBy('playCount', 'desc'));
+          
+          const unsubscribeSongs = onSnapshot(songsQuery, (snapshot) => {
+            const songsList = snapshot.docs.map(doc => ({
+              ...doc.data(),
+              id: doc.id
+            })) as Song[];
+            set({ songs: songsList });
+          }, (error) => {
+            handleFirestoreError(error, OperationType.LIST, songsPath);
+          });
+
+          // Listen for weekly selection (escalas)
+          const weeklyPath = 'escalas';
+          const unsubscribeWeekly = onSnapshot(doc(db, weeklyPath, 'current'), (snapshot) => {
             if (snapshot.exists()) {
               const data = snapshot.data();
-              const isMasterAdmin = user.email === 'duuhbr12@gmail.com';
+              set({ 
+                weeklySelection: data.selection || { domingo: [], segunda: [] },
+                lastSelectionDate: data.lastSelectionDate || null
+              });
+            }
+          }, (error) => {
+            handleFirestoreError(error, OperationType.GET, `${weeklyPath}/current`);
+          });
+
+          // Listen for user role
+          const userPath = `users/${firebaseUser.uid}`;
+          const unsubscribeRole = onSnapshot(doc(db, userPath), (snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.data();
+              const isMasterAdmin = firebaseUser.email === 'duuhbr12@gmail.com';
               set({ 
                 userRole: data.role || 'user',
                 isAdmin: data.role === 'admin' || isMasterAdmin
               });
             } else {
               // Initialize user if not exists
-              const isMasterAdmin = user.email === 'duuhbr12@gmail.com';
+              const isMasterAdmin = firebaseUser.email === 'duuhbr12@gmail.com';
               const newUser = {
-                email: user.email,
+                email: firebaseUser.email,
                 role: isMasterAdmin ? 'admin' : 'user',
                 createdAt: Date.now()
               };
@@ -212,14 +228,18 @@ export const useStore = create<AppState>()(
           }, (error) => {
             handleFirestoreError(error, OperationType.GET, userPath);
           });
-        } else {
-          set({ userRole: null, isAdmin: false });
-        }
+
+          // Store cleanup for all listeners
+          unsubscribeListeners = () => {
+            unsubscribeSongs();
+            unsubscribeWeekly();
+            unsubscribeRole();
+          };
+        });
 
         return () => {
-          unsubscribeSongs();
-          unsubscribeWeekly();
-          unsubscribeRole();
+          unsubscribeAuth();
+          if (unsubscribeListeners) unsubscribeListeners();
         };
       },
       addSong: async (songData) => {
