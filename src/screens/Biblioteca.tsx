@@ -19,7 +19,7 @@ export default function Biblioteca() {
     onConfirm: () => void;
     type: 'delete' | 'clear';
   } | null>(null);
-  const [newSong, setNewSong] = useState({ title: '', url: '', theme: 'Adoração', lyrics: '' });
+  const [newSong, setNewSong] = useState({ title: '', url: '', theme: 'ADORAÇÃO', lyrics: '' });
   const [isSearchingLyrics, setIsSearchingLyrics] = useState(false);
   const [showManualSearchConfirm, setShowManualSearchConfirm] = useState(false);
 
@@ -69,7 +69,7 @@ export default function Biblioteca() {
         theme: newSong.theme,
         lyrics: finalLyrics
       });
-      setNewSong({ title: '', url: '', theme: 'Adoração', lyrics: '' });
+      setNewSong({ title: '', url: '', theme: 'ADORAÇÃO', lyrics: '' });
       setIsModalOpen(false);
     }
   };
@@ -392,7 +392,7 @@ export default function Biblioteca() {
                 <View style={styles.themeGroup}>
                   <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Temática / Estilo</Text>
                   <View style={styles.themeOptions}>
-                    {['Adoração', 'Celebração', 'Entrega', 'Guerra'].map((theme) => (
+                    {['ADORAÇÃO', 'CELEBRAÇÃO', 'CORINHO DE FOGO', 'SANTA CEIA', 'CORINHO'].map((theme) => (
                       <TouchableOpacity
                         key={theme}
                         onPress={() => setNewSong({ ...newSong, theme })}
