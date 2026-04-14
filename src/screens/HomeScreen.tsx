@@ -117,11 +117,11 @@ export default function HomeScreen() {
             <Text style={[styles.brandText, { color: colors.text }]}>Firmados em Cristo</Text>
           </View>
           <TouchableOpacity style={[styles.profileIcon, { backgroundColor: 'transparent' }]}>
-            <Image 
-              source={{ uri: 'https://storage.googleapis.com/birdseye-free-public/2025/04/13/17/37/input_file_0.png' }} 
-              style={{ width: 40, height: 40 }}
-              resizeMode="contain"
+            <img 
+              src="https://storage.googleapis.com/birdseye-free-public/2025/04/14/13/11/input_file_0.png" 
+              style={{ width: 40, height: 40, objectFit: 'contain' }}
               referrerPolicy="no-referrer"
+              alt="Logo"
             />
           </TouchableOpacity>
         </View>

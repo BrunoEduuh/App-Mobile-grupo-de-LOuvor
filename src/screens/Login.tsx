@@ -75,11 +75,11 @@ export default function Login() {
                 style={styles.header}
               >
                 <View style={[styles.logoBg, { backgroundColor: 'transparent' }]}>
-                  <Image 
-                    source={{ uri: 'https://storage.googleapis.com/birdseye-free-public/2025/04/13/17/37/input_file_0.png' }} 
-                    style={{ width: 150, height: 150 }}
-                    resizeMode="contain"
+                  <img 
+                    src="https://storage.googleapis.com/birdseye-free-public/2025/04/14/13/11/input_file_0.png" 
+                    style={{ width: 150, height: 150, objectFit: 'contain' }}
                     referrerPolicy="no-referrer"
+                    alt="Logo Firmados em Cristo"
                   />
                 </View>
                 <Text style={[styles.title, { color: isDark ? 'white' : colors.text }]}>Firmados em Cristo</Text>
