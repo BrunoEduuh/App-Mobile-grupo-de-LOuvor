@@ -1,11 +1,73 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore, getDocFromServer, doc } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
 
 const app = initializeApp(firebaseConfig);
 export const database = getDatabase(app);
+export const auth = getAuth(app);
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser ? String(auth.currentUser.uid) : 'not-logged-in',
+      email: auth.currentUser ? String(auth.currentUser.email) : null,
+      emailVerified: !!auth.currentUser?.emailVerified,
+      isAnonymous: !!auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId ? String(auth.currentUser.tenantId) : null,
+      providerInfo: auth.currentUser?.providerData.map(p => ({
+        providerId: String(p.providerId || ''),
+        displayName: p.displayName ? String(p.displayName) : null,
+        email: p.email ? String(p.email) : null,
+        photoUrl: p.photoURL ? String(p.photoURL) : null
+      })) || []
+    },
+    operationType,
+    path
+  };
+
+  // Log the object directly for better debugging in the console
+  console.error('Firestore Error Details:', errInfo);
+
+  // Throw a JSON string as per system instructions, but safely
+  try {
+    const errorJson = JSON.stringify(errInfo);
+    throw new Error(errorJson);
+  } catch (e) {
+    // If stringify fails, throw a simpler error
+    throw new Error(`Firestore ${operationType} error at ${path}: ${errInfo.error}`);
+  }
+}
 
 // Initialize Firestore with robust configuration and error handling
 let firestoreDb: Firestore | undefined;
@@ -25,5 +87,18 @@ try {
 }
 
 export const db = firestoreDb!;
-export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// CRITICAL: Connection test as per instructions
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firebase connection verified successfully.");
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your Firebase configuration. The client is offline.");
+    }
+    // Skip logging for other errors, as this is simply a connection test.
+  }
+}
+testConnection();

@@ -119,5 +119,18 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
+    match /config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Allow reading specific test documents for connection verification
+    match /test/connection {
+      allow read: if true;
+    }
+    match /config/connection_test {
+      allow read: if true;
+    }
   }
 }

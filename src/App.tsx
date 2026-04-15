@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { motion, AnimatePresence } from 'motion/react';
 import HomeScreen from './screens/HomeScreen';
 import Escala from './screens/Escala';
 import Biblioteca from './screens/Biblioteca';
@@ -17,8 +16,8 @@ import { db } from './lib/firebase';
 
 async function testFirestoreConnection() {
   try {
-    // Test connection by trying to fetch a non-existent doc from server
-    await getDocFromServer(doc(db, '_connection_test_', 'ping'));
+    // Test connection by trying to fetch a doc from server that we allowed in rules
+    await getDocFromServer(doc(db, 'test', 'connection'));
     console.log("✅ Firestore connection verified.");
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
@@ -93,27 +92,9 @@ function AppContent() {
       {/* Container Principal com Limite de Largura para Desktop */}
       <View style={[styles.appContainer, { backgroundColor: colors.card }]}>
         <SafeAreaView style={styles.safeArea}>
-          {/* Conteúdo com Transição */}
+          {/* Conteúdo */}
           <View style={styles.content}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                style={{ 
-                  flex: 1, 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  height: '100%',
-                  width: '100%',
-                  overflow: 'hidden'
-                }}
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
+            {renderContent()}
           </View>
 
           {/* Bottom Tab Navigation Profissional */}

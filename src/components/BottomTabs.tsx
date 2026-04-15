@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Calendar, Library, Settings } from 'lucide-react';
+import { Home, Calendar, Library, Settings } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 
 interface BottomTabsProps {
@@ -11,7 +11,41 @@ interface BottomTabsProps {
 
 export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, sfs } = useTheme();
+
+  const styles = React.useMemo(() => StyleSheet.create({
+    tabBar: {
+      flexDirection: 'row',
+      borderTopWidth: 1,
+      paddingTop: 12,
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      // Sombra no topo (iOS)
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -8 },
+      shadowOpacity: 0.04,
+      shadowRadius: 12,
+      // Sombra no topo (Android)
+      elevation: 24,
+      // Garantir que a sombra apareça acima do conteúdo
+      zIndex: 1000,
+    },
+    tabItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 1,
+    },
+    tabText: {
+      fontSize: sfs(10),
+      fontWeight: '900',
+      marginTop: 4,
+      color: '#94A3B8',
+      letterSpacing: 1,
+    },
+    activeTabText: {
+      color: '#023E8A',
+    },
+  }), [sfs]);
   
   return (
     <View style={[
@@ -85,37 +119,3 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    paddingTop: 12,
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    // Sombra no topo (iOS)
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    // Sombra no topo (Android)
-    elevation: 24,
-    // Garantir que a sombra apareça acima do conteúdo
-    zIndex: 1000,
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  tabText: {
-    fontSize: 10,
-    fontWeight: '900',
-    marginTop: 4,
-    color: '#94A3B8',
-    letterSpacing: 1,
-  },
-  activeTabText: {
-    color: '#023E8A',
-  },
-});

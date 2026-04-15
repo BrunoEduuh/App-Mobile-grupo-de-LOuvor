@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, ScrollView, TouchableOpacity, TextInput, Linking, StyleSheet, SafeAreaView } from 'react-native';
-import { ArrowLeft, Play, BookOpen, Edit3, X } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, Edit3, X } from 'lucide-react-native';
 import { Song, useStore } from '../store/useStore';
 import { useTheme } from '../context/ThemeContext';
 
@@ -13,7 +13,7 @@ interface StudyModalProps {
 
 export default function StudyModal({ song, visible, onClose, onUpdate }: StudyModalProps) {
   const { settings } = useStore();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, sfs } = useTheme();
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 // ... (keep rest of state)
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -50,6 +50,168 @@ export default function StudyModal({ song, visible, onClose, onUpdate }: StudyMo
       setIsEditingArtist(false);
     }
   };
+
+  const styles = React.useMemo(() => StyleSheet.create({
+    studyContainer: {
+      flex: 1,
+    },
+    studyHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 24,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F1F5F9',
+    },
+    backButton: {
+      padding: 8,
+      backgroundColor: '#F1F5F9',
+      borderRadius: 12,
+      marginRight: 16,
+    },
+    studyHeaderInfo: {
+      flex: 1,
+    },
+    studyTitle: {
+      fontSize: sfs(20),
+      fontWeight: '900',
+      color: '#03045E',
+    },
+    studyArtist: {
+      fontSize: sfs(12),
+      color: '#94A3B8',
+      fontWeight: '700',
+      marginTop: 2,
+    },
+    artistInput: {
+      fontSize: sfs(12),
+      color: '#03045E',
+      fontWeight: '700',
+      borderBottomWidth: 1,
+      borderBottomColor: '#0284C7',
+      padding: 0,
+      minWidth: 120,
+    },
+    saveMiniText: {
+      fontSize: sfs(10),
+      color: '#0284C7',
+      fontWeight: '900',
+      textTransform: 'uppercase',
+    },
+    studyPlayBtn: {
+      backgroundColor: '#EF4444',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    studyContent: {
+      flex: 1,
+      padding: 24,
+    },
+    studyStats: {
+      backgroundColor: '#F0F9FF',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 12,
+      alignSelf: 'flex-start',
+      marginBottom: 32,
+    },
+    studyStatsText: {
+      color: '#0284C7',
+      fontSize: sfs(10),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    studySection: {
+      marginBottom: 32,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionLabel: {
+      fontSize: sfs(12),
+      fontWeight: '900',
+      color: '#03045E',
+      textTransform: 'uppercase',
+      letterSpacing: 2,
+      marginLeft: 8,
+      flex: 1,
+    },
+    editBtnText: {
+      color: '#0284C7',
+      fontSize: sfs(12),
+      fontWeight: '800',
+    },
+    lyricsCard: {
+      backgroundColor: 'white',
+      borderRadius: 24,
+      padding: 24,
+      borderWidth: 1,
+      borderColor: '#F1F5F9',
+    },
+    lyricsText: {
+      fontSize: sfs(16),
+      lineHeight: 28,
+      color: '#334155',
+      fontFamily: 'serif',
+      textAlign: 'center',
+    },
+    notesCard: {
+      backgroundColor: '#FFFAF0',
+      borderRadius: 24,
+      padding: 24,
+      borderWidth: 1,
+      borderColor: '#FFD700',
+    },
+    notesText: {
+      fontSize: sfs(14),
+      lineHeight: 22,
+      color: '#854D0E',
+      fontStyle: 'italic',
+    },
+    notesEditContainer: {
+      backgroundColor: 'white',
+      borderRadius: 24,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: '#0284C7',
+    },
+    notesInput: {
+      height: 120,
+      textAlignVertical: 'top',
+      color: '#03045E',
+      fontSize: sfs(14),
+      padding: 8,
+    },
+    notesActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 12,
+      marginTop: 12,
+    },
+    notesCancelBtn: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    notesCancelText: {
+      color: '#94A3B8',
+      fontWeight: '700',
+    },
+    notesSaveBtn: {
+      backgroundColor: '#03045E',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 12,
+    },
+    notesSaveText: {
+      color: 'white',
+      fontWeight: '800',
+    },
+  }), [sfs]);
 
   if (!song) return null;
 
@@ -110,7 +272,7 @@ export default function StudyModal({ song, visible, onClose, onUpdate }: StudyMo
 
           <ScrollView style={styles.studyContent} showsVerticalScrollIndicator={false}>
             <View style={[styles.studyStats, { backgroundColor: isDark ? '#121212' : '#F0F9FF', borderColor: isDark ? colors.blue : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
-              <Text style={[styles.studyStatsText, { color: isDark ? colors.blue : colors.secondary, fontSize: Math.max(10, settings.fontSize * 0.6) }]}>
+              <Text style={[styles.studyStatsText, { color: isDark ? colors.blue : colors.secondary, fontSize: sfs(10) }]}>
                 Tocada {song.playCount} vezes este ano
               </Text>
             </View>
@@ -129,7 +291,7 @@ export default function StudyModal({ song, visible, onClose, onUpdate }: StudyMo
               {isEditingLyrics ? (
                 <View style={[styles.notesEditContainer, { backgroundColor: colors.card, borderColor: isDark ? colors.blue : colors.primary }]}>
                   <TextInput
-                    style={[styles.notesInput, { color: colors.text, height: 200, fontFamily: 'serif', fontSize: settings.fontSize }]}
+                    style={[styles.notesInput, { color: colors.text, height: 200, fontFamily: 'serif', fontSize: sfs(16) }]}
                     multiline
                     value={tempLyrics}
                     onChangeText={setTempLyrics}
@@ -138,16 +300,16 @@ export default function StudyModal({ song, visible, onClose, onUpdate }: StudyMo
                   />
                   <View style={styles.notesActions}>
                     <TouchableOpacity onPress={() => setIsEditingLyrics(false)} style={styles.notesCancelBtn}>
-                      <Text style={[styles.notesCancelText, { color: colors.subtitle, fontSize: Math.max(12, settings.fontSize * 0.7) }]}>Cancelar</Text>
+                      <Text style={[styles.notesCancelText, { color: colors.subtitle, fontSize: sfs(12) }]}>Cancelar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleSaveLyrics} style={[styles.notesSaveBtn, { backgroundColor: isDark ? colors.blue : colors.primary }]}>
-                      <Text style={[styles.notesSaveText, { color: 'white', fontSize: Math.max(12, settings.fontSize * 0.7) }]}>Salvar</Text>
+                      <Text style={[styles.notesSaveText, { color: 'white', fontSize: sfs(12) }]}>Salvar</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               ) : (
                 <View style={[styles.lyricsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Text style={[styles.lyricsText, { color: isDark ? '#CBD5E1' : '#334155', fontSize: settings.fontSize }]}>
+                  <Text style={[styles.lyricsText, { color: isDark ? '#CBD5E1' : '#334155', fontSize: sfs(16) }]}>
                     {song.lyrics || 'Letra não cadastrada para este louvor.'}
                   </Text>
                 </View>
@@ -200,164 +362,4 @@ export default function StudyModal({ song, visible, onClose, onUpdate }: StudyMo
   );
 }
 
-const styles = StyleSheet.create({
-  studyContainer: {
-    flex: 1,
-  },
-  studyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  backButton: {
-    padding: 8,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    marginRight: 16,
-  },
-  studyHeaderInfo: {
-    flex: 1,
-  },
-  studyTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#03045E',
-  },
-  studyArtist: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  artistInput: {
-    fontSize: 12,
-    color: '#03045E',
-    fontWeight: '700',
-    borderBottomWidth: 1,
-    borderBottomColor: '#0284C7',
-    padding: 0,
-    minWidth: 120,
-  },
-  saveMiniText: {
-    fontSize: 10,
-    color: '#0284C7',
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  studyPlayBtn: {
-    backgroundColor: '#EF4444',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  studyContent: {
-    flex: 1,
-    padding: 24,
-  },
-  studyStats: {
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 32,
-  },
-  studyStatsText: {
-    color: '#0284C7',
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  studySection: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#03045E',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginLeft: 8,
-    flex: 1,
-  },
-  editBtnText: {
-    color: '#0284C7',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  lyricsCard: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  lyricsText: {
-    fontSize: 16,
-    lineHeight: 28,
-    color: '#334155',
-    fontFamily: 'serif',
-    textAlign: 'center',
-  },
-  notesCard: {
-    backgroundColor: '#FFFAF0',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#FFD700',
-  },
-  notesText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#854D0E',
-    fontStyle: 'italic',
-  },
-  notesEditContainer: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#0284C7',
-  },
-  notesInput: {
-    height: 120,
-    textAlignVertical: 'top',
-    color: '#03045E',
-    fontSize: 14,
-    padding: 8,
-  },
-  notesActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 12,
-  },
-  notesCancelBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  notesCancelText: {
-    color: '#94A3B8',
-    fontWeight: '700',
-  },
-  notesSaveBtn: {
-    backgroundColor: '#03045E',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  notesSaveText: {
-    color: 'white',
-    fontWeight: '800',
-  },
-});
+

@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StatusBar, Modal, ScrollView, TextInput, SafeAreaView, StyleSheet } from 'react-native';
-import { Heart, Music, ChevronRight, Play, X, BookOpen, Edit3, ArrowLeft, Plus, Trash2, Search, Link as LinkIcon, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { MotiView } from 'moti';
+import { Heart, Music, ChevronRight, Play, X, BookOpen, Edit3, ArrowLeft, Plus, Trash2, Search, Link as LinkIcon, AlertTriangle } from 'lucide-react-native';
 import { useStore, Song } from '../store/useStore';
 import StudyModal from '../components/StudyModal';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Biblioteca() {
   const { songs, addSong, favorites, toggleFavorite, updateSong, deleteSong, clearAllSongs, settings, isAdmin } = useStore();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, sfs } = useTheme();
 // ... (keep rest of state)
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -182,12 +182,10 @@ export default function Biblioteca() {
   };
 
   const SongItem = ({ item, index }: { item: Song; index: number }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+    <MotiView
+      from={{ opacity: 0, translateY: 20 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: 'timing', duration: 500, delay: index * 50 }}
     >
       <TouchableOpacity 
         style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -224,16 +222,11 @@ export default function Biblioteca() {
             onPress={() => toggleFavorite(item.id)}
             style={styles.favoriteButton}
           >
-            <motion.div
-              animate={{ scale: favorites.includes(item.id) ? [1, 1.3, 1] : 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Heart 
-                size={18} 
-                color={favorites.includes(item.id) ? "#FF006E" : colors.subtitle} 
-                fill={favorites.includes(item.id) ? "#FF006E" : "transparent"}
-              />
-            </motion.div>
+            <Heart 
+              size={18} 
+              color={favorites.includes(item.id) ? "#FF006E" : colors.subtitle} 
+              fill={favorites.includes(item.id) ? "#FF006E" : "transparent"}
+            />
           </TouchableOpacity>
           {isAdmin && (
             <TouchableOpacity 
@@ -245,14 +238,354 @@ export default function Biblioteca() {
           )}
         </View>
       </TouchableOpacity>
-    </motion.div>
+    </MotiView>
   );
+
+  const styles = useMemo(() => StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 24,
+      paddingBottom: 24,
+    },
+    headerTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    headerIconBg: {
+      padding: 8,
+      borderRadius: 12,
+      marginRight: 12,
+    },
+    headerTitle: {
+      fontSize: sfs(22),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: -1,
+    },
+    subtitle: {
+      fontSize: sfs(12),
+      fontWeight: '700',
+      marginLeft: 4,
+    },
+    listContent: {
+      paddingBottom: 40,
+    },
+    songCard: {
+      marginHorizontal: 24,
+      marginBottom: 16,
+      padding: 20,
+      borderRadius: 32,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+    songInfoContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    musicIconBg: {
+      padding: 12,
+      borderRadius: 16,
+      marginRight: 12,
+    },
+    textContainer: {
+      flex: 1,
+    },
+    songTitle: {
+      fontWeight: '900',
+      fontSize: sfs(16),
+      letterSpacing: -0.5,
+    },
+    songMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 2,
+    },
+    themeBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      borderRadius: 4,
+    },
+    themeText: {
+      fontSize: sfs(8),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    dot: {
+      fontSize: sfs(10),
+      marginHorizontal: 6,
+    },
+    playCountText: {
+      fontSize: sfs(8),
+      fontWeight: '700',
+      textTransform: 'uppercase',
+    },
+    actions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    favoriteButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    deleteButton: {
+      padding: 8,
+      borderRadius: 12,
+    },
+    clearAllBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+    },
+    clearAllText: {
+      color: '#EF4444',
+      fontSize: sfs(10),
+      fontWeight: '900',
+      marginLeft: 6,
+      textTransform: 'uppercase',
+    },
+    chevronBg: {
+      padding: 8,
+      borderRadius: 20,
+    },
+    emptyContainer: {
+      padding: 60,
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontWeight: '600',
+      marginTop: 16,
+      textAlign: 'center',
+      lineHeight: 20,
+      fontSize: sfs(14),
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderRadius: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 2,
+      borderWidth: 1,
+      marginTop: 16,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: 12,
+      fontWeight: '700',
+    },
+    fabContainer: {
+      position: 'absolute',
+      bottom: 24,
+      right: 24,
+      zIndex: 2000,
+    },
+    fab: {
+      width: 52,
+      height: 52,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.3,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    confirmOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    confirmContent: {
+      borderRadius: 32,
+      padding: 32,
+      alignItems: 'center',
+      width: '100%',
+    },
+    confirmIconBg: {
+      padding: 16,
+      borderRadius: 20,
+      marginBottom: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    confirmTitle: {
+      fontSize: sfs(22),
+      fontWeight: '900',
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    confirmMessage: {
+      fontSize: sfs(15),
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 32,
+    },
+    confirmActions: {
+      flexDirection: 'row',
+      gap: 12,
+      width: '100%',
+    },
+    cancelBtn: {
+      flex: 1,
+      padding: 16,
+      borderRadius: 16,
+      alignItems: 'center',
+    },
+    cancelBtnText: {
+      fontWeight: '800',
+      fontSize: sfs(14),
+    },
+    confirmBtn: {
+      flex: 1,
+      padding: 16,
+      borderRadius: 16,
+      backgroundColor: '#EF4444',
+      alignItems: 'center',
+    },
+    confirmBtnText: {
+      color: 'white',
+      fontWeight: '800',
+      fontSize: sfs(14),
+    },
+    modalOverlay: {
+      flex: 1,
+    },
+    modalContent: {
+      flex: 1,
+      padding: 24,
+    },
+    modalHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: 12,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    modalTitle: {
+      fontSize: sfs(24),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: -0.5,
+    },
+    modalSubtitle: {
+      fontSize: sfs(10),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: 3,
+    },
+    closeButton: {
+      padding: 12,
+      borderRadius: 16,
+    },
+    inputGroup: {
+      marginBottom: 14,
+    },
+    inputLabel: {
+      fontSize: sfs(10),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: 3,
+    },
+    textInput: {
+      borderRadius: 16,
+      padding: 12,
+      fontWeight: '700',
+      fontSize: sfs(16),
+      borderWidth: 1,
+    },
+    urlInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 20,
+      paddingHorizontal: 20,
+      borderWidth: 1,
+    },
+    urlInput: {
+      flex: 1,
+      padding: 12,
+      fontWeight: '700',
+      fontSize: sfs(14),
+    },
+    themeGroup: {
+      marginBottom: 16,
+    },
+    themeOptions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginTop: 16,
+    },
+    themeOption: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 16,
+      borderWidth: 1,
+    },
+    themeOptionActive: {
+    },
+    themeOptionText: {
+      fontSize: sfs(12),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+    },
+    themeOptionTextActive: {
+      color: 'white',
+    },
+    submitButton: {
+      padding: 20,
+      borderRadius: 20,
+      alignItems: 'center',
+      marginTop: 8,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 8,
+    },
+    submitButtonText: {
+      color: 'white',
+      fontSize: sfs(18),
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+  }), [sfs]);
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
-      <View style={styles.header}>
+      <MotiView 
+        from={{ opacity: 0, translateY: -10 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 600 }}
+        style={styles.header}
+      >
         <View style={styles.headerTitleRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <View style={[styles.headerIconBg, { backgroundColor: colors.primary }]}>
@@ -279,7 +612,7 @@ export default function Biblioteca() {
             onChangeText={setSearchQuery}
           />
         </View>
-      </View>
+      </MotiView>
 
       <FlatList
         style={{ flex: 1 }}
@@ -288,23 +621,20 @@ export default function Biblioteca() {
         renderItem={({ item, index }) => <SongItem item={item} index={index} />}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={styles.emptyContainer}
-          >
+          <View style={styles.emptyContainer}>
             <Music size={48} color={colors.border} />
             <Text style={[styles.emptyText, { color: colors.subtitle }]}>
               Nenhum louvor cadastrado na sua Biblioteca.
             </Text>
-          </motion.div>
+          </View>
         )}
         contentContainerStyle={styles.listContent}
       />
 
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+      <MotiView 
+        from={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', damping: 15, delay: 1000 }}
         style={styles.fabContainer}
       >
         <TouchableOpacity 
@@ -314,7 +644,7 @@ export default function Biblioteca() {
         >
           <Plus size={24} color={isDark ? 'white' : '#FFD700'} strokeWidth={3} />
         </TouchableOpacity>
-      </motion.div>
+      </MotiView>
 
       <Modal
         visible={isModalOpen}
@@ -329,8 +659,8 @@ export default function Biblioteca() {
               
               <View style={styles.modalHeader}>
                 <View>
-                  <Text style={[styles.modalTitle, { color: colors.text, fontSize: Math.max(20, settings.fontSize * 1.4) }]}>Novo Louvor</Text>
-                  <Text style={[styles.modalSubtitle, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Adicionar ao Repertório</Text>
+                  <Text style={[styles.modalTitle, { color: colors.text, fontSize: sfs(20) }]}>Novo Louvor</Text>
+                  <Text style={[styles.modalSubtitle, { color: colors.secondary, fontSize: sfs(9) }]}>Adicionar ao Repertório</Text>
                 </View>
                 <TouchableOpacity 
                   onPress={() => setIsModalOpen(false)}
@@ -342,9 +672,9 @@ export default function Biblioteca() {
 
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Título do Louvor</Text>
+                  <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: sfs(9) }]}>Título do Louvor</Text>
                   <TextInput
-                    style={[styles.textInput, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC', color: colors.text, borderColor: colors.border, fontSize: settings.fontSize }]}
+                    style={[styles.textInput, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC', color: colors.text, borderColor: colors.border, fontSize: sfs(16) }]}
                     placeholder="Ex: Música - Artista"
                     placeholderTextColor={colors.subtitle}
                     value={newSong.title}
@@ -356,11 +686,11 @@ export default function Biblioteca() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Link do YouTube</Text>
+                  <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: sfs(9) }]}>Link do YouTube</Text>
                   <View style={[styles.urlInputContainer, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC', borderColor: colors.border }]}>
                     <LinkIcon size={20} color={colors.subtitle} />
                     <TextInput
-                      style={[styles.urlInput, { color: colors.text, fontSize: Math.max(12, settings.fontSize * 0.8) }]}
+                      style={[styles.urlInput, { color: colors.text, fontSize: sfs(12) }]}
                       placeholder="https://youtube.com/..."
                       placeholderTextColor={colors.subtitle}
                       value={newSong.url}
@@ -373,14 +703,14 @@ export default function Biblioteca() {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Letra da Música</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      {isSearchingLyrics && <Text style={{ fontSize: 10, color: colors.secondary, fontWeight: 'bold' }}>Buscando...</Text>}
+                      {isSearchingLyrics && <Text style={{ fontSize: sfs(10), color: colors.secondary, fontWeight: 'bold' }}>Buscando...</Text>}
                       <TouchableOpacity onPress={searchVagalumeLyrics} style={{ backgroundColor: isDark ? colors.blue : '#F0F9FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                        <Text style={{ fontSize: 10, color: isDark ? 'white' : colors.secondary, fontWeight: '900' }}>BUSCAR AGORA</Text>
+                        <Text style={{ fontSize: sfs(10), color: isDark ? 'white' : colors.secondary, fontWeight: '900' }}>BUSCAR AGORA</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
                   <TextInput
-                    style={[styles.textInput, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC', color: colors.text, borderColor: colors.border, height: 100, textAlignVertical: 'top', paddingTop: 12, fontSize: settings.fontSize }]}
+                    style={[styles.textInput, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC', color: colors.text, borderColor: colors.border, height: 100, textAlignVertical: 'top', paddingTop: 12, fontSize: sfs(16) }]}
                     placeholder="A letra aparecerá aqui automaticamente ou cole manualmente..."
                     placeholderTextColor={colors.subtitle}
                     multiline
@@ -390,7 +720,7 @@ export default function Biblioteca() {
                 </View>
 
                 <View style={styles.themeGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Temática / Estilo</Text>
+                  <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: sfs(9) }]}>Temática / Estilo</Text>
                   <View style={styles.themeOptions}>
                     {['ADORAÇÃO', 'CELEBRAÇÃO', 'CORINHO DE FOGO', 'SANTA CEIA', 'CORINHO'].map((theme) => (
                       <TouchableOpacity
@@ -404,7 +734,7 @@ export default function Biblioteca() {
                       >
                         <Text style={[
                           styles.themeOptionText,
-                          { color: colors.subtitle, fontSize: Math.max(10, settings.fontSize * 0.6) },
+                          { color: colors.subtitle, fontSize: sfs(10) },
                           newSong.theme === theme && [styles.themeOptionTextActive, { color: 'white' }]
                         ]}>
                           {theme}
@@ -418,7 +748,7 @@ export default function Biblioteca() {
                   onPress={handleAddSong}
                   style={[styles.submitButton, { backgroundColor: isDark ? colors.blue : colors.primary }]}
                 >
-                  <Text style={[styles.submitButtonText, { color: 'white', fontSize: Math.max(14, settings.fontSize * 0.9) }]}>Adicionar Louvor</Text>
+                  <Text style={[styles.submitButtonText, { color: 'white', fontSize: sfs(14) }]}>Adicionar Louvor</Text>
                 </TouchableOpacity>
               </ScrollView>
 
@@ -430,11 +760,7 @@ export default function Biblioteca() {
                 onRequestClose={() => setShowManualSearchConfirm(false)}
               >
                 <View style={[styles.confirmOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(3, 4, 94, 0.6)' }]}>
-                  <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    style={{ width: '100%', maxWidth: 400 }}
-                  >
+                  <View style={{ width: '100%', maxWidth: 400 }}>
                     <View style={[styles.confirmContent, { backgroundColor: colors.card }]}>
                       <View style={[styles.confirmIconBg, { backgroundColor: isDark ? '#1E293B' : '#F0F9FF' }]}>
                         <AlertTriangle size={32} color={colors.secondary} />
@@ -461,7 +787,7 @@ export default function Biblioteca() {
                         </TouchableOpacity>
                       </View>
                     </View>
-                  </motion.div>
+                  </View>
                 </View>
               </Modal>
             </View>
@@ -489,370 +815,34 @@ export default function Biblioteca() {
         onRequestClose={() => setIsConfirmOpen(false)}
       >
         <View style={[styles.confirmOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(3, 4, 94, 0.6)' }]}>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            style={{ width: '100%', maxWidth: 400 }}
-          >
+          <View style={{ width: '100%', maxWidth: 400 }}>
             <View style={[styles.confirmContent, { backgroundColor: colors.card }]}>
               <View style={[styles.confirmIconBg, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}>
                 <AlertTriangle size={32} color="#EF4444" />
               </View>
-              <Text style={[styles.confirmTitle, { color: colors.text, fontSize: Math.max(16, settings.fontSize * 1.2) }]}>{confirmConfig?.title}</Text>
-              <Text style={[styles.confirmMessage, { color: colors.subtitle, fontSize: Math.max(12, settings.fontSize * 0.8) }]}>{confirmConfig?.message}</Text>
+              <Text style={[styles.confirmTitle, { color: colors.text, fontSize: sfs(16) }]}>{confirmConfig?.title}</Text>
+              <Text style={[styles.confirmMessage, { color: colors.subtitle, fontSize: sfs(12) }]}>{confirmConfig?.message}</Text>
               
               <View style={styles.confirmActions}>
                 <TouchableOpacity 
                   onPress={() => setIsConfirmOpen(false)}
                   style={[styles.cancelBtn, { backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }]}
                 >
-                  <Text style={[styles.cancelBtnText, { color: colors.subtitle, fontSize: Math.max(12, settings.fontSize * 0.7) }]}>Cancelar</Text>
+                  <Text style={[styles.cancelBtnText, { color: colors.subtitle, fontSize: sfs(12) }]}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={confirmConfig?.onConfirm}
                   style={styles.confirmBtn}
                 >
-                  <Text style={[styles.confirmBtnText, { fontSize: Math.max(12, settings.fontSize * 0.7) }]}>Confirmar</Text>
+                  <Text style={[styles.confirmBtnText, { fontSize: sfs(12) }]}>Confirmar</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </motion.div>
+          </View>
         </View>
       </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  headerIconBg: {
-    padding: 8,
-    borderRadius: 12,
-    marginRight: 12,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: -1,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  listContent: {
-    paddingBottom: 40,
-  },
-  songCard: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    padding: 20,
-    borderRadius: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  songInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  musicIconBg: {
-    padding: 12,
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  songTitle: {
-    fontWeight: '900',
-    fontSize: 16,
-    letterSpacing: -0.5,
-  },
-  songMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  themeBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  themeText: {
-    fontSize: 8,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  dot: {
-    fontSize: 10,
-    marginHorizontal: 6,
-  },
-  playCountText: {
-    fontSize: 8,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  favoriteButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 12,
-  },
-  clearAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  clearAllText: {
-    color: '#EF4444',
-    fontSize: 10,
-    fontWeight: '900',
-    marginLeft: 6,
-    textTransform: 'uppercase',
-  },
-  chevronBg: {
-    padding: 8,
-    borderRadius: 20,
-  },
-  emptyContainer: {
-    padding: 60,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    borderWidth: 1,
-    marginTop: 16,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontWeight: '700',
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    zIndex: 2000,
-  },
-  fab: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  confirmOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  confirmContent: {
-    borderRadius: 32,
-    padding: 32,
-    alignItems: 'center',
-    width: '100%',
-  },
-  confirmIconBg: {
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  confirmMessage: {
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-  },
-  confirmActions: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  cancelBtn: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  cancelBtnText: {
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  confirmBtn: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-  },
-  confirmBtnText: {
-    color: 'white',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-  },
-  modalContent: {
-    flex: 1,
-    padding: 24,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: -0.5,
-  },
-  modalSubtitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 3,
-  },
-  closeButton: {
-    padding: 12,
-    borderRadius: 16,
-  },
-  inputGroup: {
-    marginBottom: 14,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 3,
-  },
-  textInput: {
-    borderRadius: 16,
-    padding: 12,
-    fontWeight: '700',
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  urlInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-  },
-  urlInput: {
-    flex: 1,
-    padding: 12,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  themeGroup: {
-    marginBottom: 16,
-  },
-  themeOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 16,
-  },
-  themeOption: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  themeOptionActive: {
-  },
-  themeOptionText: {
-    fontSize: 12,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  themeOptionTextActive: {
-    color: 'white',
-  },
-  submitButton: {
-    padding: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-});
+

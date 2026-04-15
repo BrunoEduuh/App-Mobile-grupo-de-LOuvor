@@ -20,7 +20,8 @@ interface ThemeContextType {
   colors: ThemeColors;
   isDark: boolean;
   fontSize: number;
-  fontScale: number; // multiplier for font sizes
+  fontScale: number;
+  sfs: (size: number) => number; // Scaled Font Size
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -72,12 +73,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // We can calculate a scale factor based on settings.fontSize
   const fontScale = useMemo(() => settings.fontSize / 16, [settings.fontSize]);
 
+  const sfs = useMemo(() => (size: number) => Math.round(size * fontScale), [fontScale]);
+
   const value = useMemo(() => ({
     colors,
     isDark,
     fontSize: settings.fontSize,
     fontScale,
-  }), [colors, isDark, settings.fontSize, fontScale]);
+    sfs,
+  }), [colors, isDark, settings.fontSize, fontScale, sfs]);
 
   return (
     <ThemeContext.Provider value={value}>

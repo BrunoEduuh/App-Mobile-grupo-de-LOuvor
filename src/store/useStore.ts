@@ -17,62 +17,9 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId: string | undefined;
-    email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  // We don't throw here to avoid crashing the whole app, but we log it clearly
-}
-
-interface Verse {
-  text: string;
-  reference: string;
-}
+import { Verse, BIBLIA_CURADA } from '../constants/content';
+import { registerForPushNotificationsAsync, sendPushNotification } from '../lib/notifications';
+import { handleFirestoreError, OperationType } from '../lib/firebase';
 
 export interface Song {
   id: string;
@@ -96,6 +43,10 @@ interface AppState {
     domingo: Song[];
     segunda: Song[];
   };
+  rehearsalInfo: {
+    day: string;
+    time: string;
+  };
   favorites: string[];
   lastSelectionDate: number | null;
   settings: {
@@ -109,29 +60,15 @@ interface AppState {
   addSong: (song: Omit<Song, 'id' | 'playCount' | 'lastPlayedDate'>) => void;
   updateSong: (songId: string, updates: Partial<Omit<Song, 'id'>>) => void;
   checkAndResetWeeklySetlist: (force?: boolean) => void;
+  updateWeeklySelection: (selection: AppState['weeklySelection']) => void;
+  updateRehearsalInfo: (info: AppState['rehearsalInfo']) => void;
   incrementPlayCount: (songId: string) => void;
   toggleFavorite: (songId: string) => void;
   deleteSong: (songId: string) => void;
   clearAllSongs: () => void;
   updateSettings: (settings: Partial<AppState['settings']>) => void;
+  testFirebaseConnection: () => Promise<boolean>;
 }
-
-/**
- * BASE BÍBLICA INTEGRAL - GÊNESIS A APOCALIPSE
- * Estrutura preparada para suportar centenas de textos curados.
- */
-const BIBLIA_CURADA: Verse[] = [
-  { text: "No princípio, criou Deus os céus e a terra.", reference: "Gênesis 1:1" },
-  { text: "O Senhor é o meu pastor; nada me faltará.", reference: "Salmos 23:1" },
-  { text: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.", reference: "João 3:16" },
-  { text: "Eu sou o Alfa e o Ômega, o Princípio e o Fim, diz o Senhor.", reference: "Apocalipse 1:8" },
-  { text: "Tudo posso naquele que me fortalece.", reference: "Filipenses 4:13" },
-  { text: "O temor do Senhor é o princípio da sabedoria.", reference: "Provérbios 1:7" },
-  { text: "Consagra ao Senhor as tuas obras, e teus pensamentos serão estabelecidos.", reference: "Provérbios 16:3" },
-  { text: "Eis que faço novas todas as coisas.", reference: "Apocalipse 21:5" },
-  { text: "Sê forte e corajoso; não temas, nem te espantes.", reference: "Josué 1:9" },
-  { text: "A graça do Senhor Jesus seja com todos. Amém.", reference: "Apocalipse 22:21" },
-];
 
 const initialSongs: Song[] = [];
 
@@ -144,6 +81,7 @@ export const useStore = create<AppState>()(
       currentVerse: BIBLIA_CURADA[0],
       songs: initialSongs,
       weeklySelection: { domingo: [], segunda: [] },
+      rehearsalInfo: { day: 'Sextas-feiras', time: '19:00' },
       favorites: [],
       lastSelectionDate: null,
       settings: {
@@ -206,16 +144,17 @@ export const useStore = create<AppState>()(
           // Listen for user role
           const userPath = `users/${firebaseUser.uid}`;
           const unsubscribeRole = onSnapshot(doc(db, userPath), (snapshot) => {
+            const masterEmails = ['duuhbr12@gmail.com', 'Bruno_mendes_silva@outlook.com'];
+            const isMasterAdmin = masterEmails.includes(firebaseUser.email?.toLowerCase() || '');
+            
             if (snapshot.exists()) {
               const data = snapshot.data();
-              const isMasterAdmin = firebaseUser.email === 'duuhbr12@gmail.com';
               set({ 
                 userRole: data.role || 'user',
                 isAdmin: data.role === 'admin' || isMasterAdmin
               });
             } else {
               // Initialize user if not exists
-              const isMasterAdmin = firebaseUser.email === 'duuhbr12@gmail.com';
               const newUser = {
                 email: firebaseUser.email,
                 role: isMasterAdmin ? 'admin' : 'user',
@@ -225,8 +164,21 @@ export const useStore = create<AppState>()(
                 handleFirestoreError(err, OperationType.CREATE, userPath);
               });
             }
+            
+            // Register for push notifications
+            registerForPushNotificationsAsync(firebaseUser.uid).catch(console.error);
           }, (error) => {
             handleFirestoreError(error, OperationType.GET, userPath);
+          });
+
+          // Listen for rehearsal info
+          const configPath = 'config/rehearsal';
+          const unsubscribeRehearsal = onSnapshot(doc(db, configPath), (snapshot) => {
+            if (snapshot.exists()) {
+              set({ rehearsalInfo: snapshot.data() as AppState['rehearsalInfo'] });
+            }
+          }, (error) => {
+            handleFirestoreError(error, OperationType.GET, configPath);
           });
 
           // Store cleanup for all listeners
@@ -234,6 +186,7 @@ export const useStore = create<AppState>()(
             unsubscribeSongs();
             unsubscribeWeekly();
             unsubscribeRole();
+            unsubscribeRehearsal();
           };
         });
 
@@ -264,6 +217,30 @@ export const useStore = create<AppState>()(
           await updateDoc(doc(db, songPath), updates);
         } catch (error) {
           handleFirestoreError(error, OperationType.UPDATE, songPath);
+        }
+      },
+      updateWeeklySelection: async (selection) => {
+        const weeklyPath = 'escalas/current';
+        try {
+          await updateDoc(doc(db, weeklyPath), {
+            selection,
+            updatedAt: Date.now()
+          });
+          // Notify users
+          await sendPushNotification(
+            'Escala Atualizada! 🎵',
+            'A escala de louvores da semana foi alterada manualmente pela liderança.'
+          );
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, weeklyPath);
+        }
+      },
+      updateRehearsalInfo: async (info) => {
+        const configPath = 'config/rehearsal';
+        try {
+          await setDoc(doc(db, configPath), info);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, configPath);
         }
       },
       checkAndResetWeeklySetlist: async (force = false) => {
@@ -316,6 +293,12 @@ export const useStore = create<AppState>()(
             });
 
             await batch.commit();
+
+            // Notify users
+            await sendPushNotification(
+              'Nova Escala Liberada! ✨',
+              'Os louvores da semana foram sorteados. Confira agora no app!'
+            );
           } catch (error) {
             handleFirestoreError(error, OperationType.WRITE, 'escalas/current');
           }
@@ -370,6 +353,16 @@ export const useStore = create<AppState>()(
       updateSettings: (newSettings) => set((state) => ({
         settings: { ...state.settings, ...newSettings }
       })),
+      testFirebaseConnection: async () => {
+        try {
+          const testDoc = doc(db, 'config', 'connection_test');
+          await getDoc(testDoc);
+          return true;
+        } catch (error) {
+          console.error('Firebase connection test failed:', error);
+          return false;
+        }
+      },
     }),
     {
       name: 'firmados-mobile-storage',
