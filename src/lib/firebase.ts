@@ -2,7 +2,16 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { initializeFirestore, getFirestore, Firestore, getDocFromServer, doc } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+const firebaseConfig = {
+  projectId: "gen-lang-client-0569954161",
+  appId: "1:48701284341:web:98d0a3710ba050c9bf0abc",
+  apiKey: "AIzaSyBwOHJI9Zbj7iMbBTvxI2JHY7EeeM1F2eQ",
+  authDomain: "gen-lang-client-0569954161.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-976ac814-e92d-4367-8274-8e93a8812807",
+  storageBucket: "gen-lang-client-0569954161.firebasestorage.app",
+  messagingSenderId: "48701284341",
+  measurementId: ""
+};
 
 export enum OperationType {
   CREATE = 'create',
