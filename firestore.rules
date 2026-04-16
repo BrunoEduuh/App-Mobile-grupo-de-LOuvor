@@ -49,8 +49,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && 
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         request.auth.token.email.lower() == "duuhbr12@gmail.com" ||
-         request.auth.token.email.lower() == "bruno_mendes_silva@outlook.com");
+         (request.auth.token.email.lower() in ["duuhbr12@gmail.com", "bruno_mendes_silva@outlook.com"]));
     }
 
     function isValidEmail(email) {
@@ -69,21 +68,24 @@ service cloud.firestore {
       return data.keys().hasAll(['email', 'role', 'createdAt']) &&
              data.keys().hasOnly(['email', 'role', 'createdAt']) &&
              isValidEmail(data.email) &&
+             data.email.size() < 256 &&
              data.role in ['admin', 'user'] &&
              data.createdAt is number;
     }
 
     function isValidLouvor(data) {
       return data.keys().hasAll(['title', 'url', 'theme', 'playCount', 'addedBy', 'createdAt']) &&
-             data.keys().hasOnly(['title', 'artist', 'url', 'theme', 'lyrics', 'playCount', 'lastPlayedDate', 'addedBy', 'createdAt']) &&
-             data.title is string && data.title.size() < 200 &&
+             data.keys().hasOnly(['title', 'artist', 'url', 'theme', 'lyrics', 'rehearsalNotes', 'playCount', 'lastPlayedDate', 'addedBy', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              (!('artist' in data) || (data.artist is string && data.artist.size() < 100)) &&
              isValidUrl(data.url) &&
-             data.theme is string &&
-             (!('lyrics' in data) || data.lyrics is string) &&
-             data.playCount is number &&
+             data.url.size() < 1000 &&
+             data.theme is string && data.theme.size() < 100 &&
+             (!('lyrics' in data) || (data.lyrics is string && data.lyrics.size() < 10000)) &&
+             (!('rehearsalNotes' in data) || (data.rehearsalNotes is string && data.rehearsalNotes.size() < 2000)) &&
+             data.playCount is number && data.playCount >= 0 &&
              (!('lastPlayedDate' in data) || data.lastPlayedDate == null || data.lastPlayedDate is number) &&
-             data.addedBy == request.auth.uid &&
+             data.addedBy is string && data.addedBy.size() > 0 && data.addedBy.size() < 128 &&
              data.createdAt is number;
     }
 
@@ -100,9 +102,9 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isOwner(userId) || isAdmin();
       allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
-                    (isOwner(userId) && request.resource.data.role == 'user' || isAdmin());
+                    ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
       allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
                     (isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role));
       allow delete: if isAdmin();
@@ -110,20 +112,31 @@ service cloud.firestore {
 
     match /louvores/{louvorId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidLouvor(request.resource.data);
+      allow create: if isAuthenticated() && isValidLouvor(request.resource.data) && 
+                    request.resource.data.addedBy == request.auth.uid;
       allow update: if isAuthenticated() && isValidLouvor(request.resource.data) && 
-                    (isAdmin() || resource.data.addedBy == request.auth.uid);
+                    (isAdmin() || (resource.data.addedBy == request.auth.uid && 
+                                   request.resource.data.addedBy == resource.data.addedBy &&
+                                   request.resource.data.createdAt == resource.data.createdAt));
       allow delete: if isAdmin();
     }
 
     match /escalas/{escalaId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isValidEscala(request.resource.data);
     }
 
     match /config/{configId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      
+      match /rehearsal {
+        allow write: if isAdmin() && 
+          request.resource.data.keys().hasAll(['day', 'time']) &&
+          request.resource.data.keys().hasOnly(['day', 'time']) &&
+          request.resource.data.day is string &&
+          request.resource.data.time is string;
+      }
     }
 
     // Allow reading specific test documents for connection verification

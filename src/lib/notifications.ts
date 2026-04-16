@@ -89,6 +89,6 @@ export async function sendPushNotification(title: string, body: string) {
       body: JSON.stringify(message),
     });
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    console.error('Error sending push notification: ' + (error instanceof Error ? error.message : String(error)));
   }
 }

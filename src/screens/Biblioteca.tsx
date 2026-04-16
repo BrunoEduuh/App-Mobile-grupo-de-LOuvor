@@ -55,7 +55,7 @@ export default function Biblioteca() {
             finalLyrics = data.mus[0].text;
           }
         } catch (e) {
-          console.warn("Erro na busca final de letra (Vagalume pode estar fora do ar ou bloqueado):", e);
+          console.warn("Erro na busca final de letra (Vagalume pode estar fora do ar ou bloqueado): " + (e instanceof Error ? e.message : String(e)));
           // Não bloqueia o salvamento se a busca falhar
         } finally {
           setIsSearchingLyrics(false);
@@ -140,11 +140,11 @@ export default function Biblioteca() {
           setShowManualSearchConfirm(true);
         }
       } catch (e) {
-        console.warn("Erro na busca de letra (Vagalume):", e);
+        console.warn("Erro na busca de letra (Vagalume): " + (e instanceof Error ? e.message : String(e)));
         setShowManualSearchConfirm(true);
       }
     } catch (error) {
-      console.error("Erro na busca otimizada:", error);
+      console.error("Erro na busca otimizada: " + (error instanceof Error ? error.message : String(error)));
       setShowManualSearchConfirm(true);
     } finally {
       setIsSearchingLyrics(false);

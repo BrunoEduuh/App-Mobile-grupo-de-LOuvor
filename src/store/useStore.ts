@@ -21,6 +21,42 @@ import { Verse, BIBLIA_CURADA } from '../constants/content';
 import { registerForPushNotificationsAsync, sendPushNotification } from '../lib/notifications';
 import { handleFirestoreError, OperationType } from '../lib/firebase';
 
+// Helper to sanitize Firestore data to plain objects and handle circularity
+function sanitizeData(data: any): any {
+  if (data === null || data === undefined) return data;
+  
+  // Handle Firestore Timestamp
+  if (data instanceof Timestamp) {
+    return data.toMillis();
+  }
+  
+  // Handle Firestore DocumentReference or other non-plain objects that might be circular
+  if (typeof data === 'object') {
+    // If it's a Firestore Reference or something with a 'firestore' property, it's likely circular
+    if (data.firestore || data.constructor?.name === 'DocumentReference' || data.constructor?.name === 'Query' || data.constructor?.name === 'Firestore') {
+      return '[FirebaseObject]'; // Strip it or convert to string representation
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(sanitizeData);
+    }
+    
+    // Only proceed with plain objects
+    if (data.constructor === Object) {
+      const sanitized: any = {};
+      for (const key in data) {
+        sanitized[key] = sanitizeData(data[key]);
+      }
+      return sanitized;
+    }
+
+    // For other objects (like Errors), convert to string if they might be complex
+    return String(data);
+  }
+  
+  return data;
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -106,7 +142,7 @@ export const useStore = create<AppState>()(
           
           const unsubscribeSongs = onSnapshot(songsQuery, (snapshot) => {
             const songsList = snapshot.docs.map(doc => ({
-              ...doc.data(),
+              ...sanitizeData(doc.data()),
               id: doc.id
             })) as Song[];
             set({ songs: songsList });
@@ -119,7 +155,7 @@ export const useStore = create<AppState>()(
           const weeklyPath = 'escalas';
           const unsubscribeWeekly = onSnapshot(doc(db, weeklyPath, 'current'), (snapshot) => {
             if (snapshot.exists()) {
-              const data = snapshot.data();
+              const data = sanitizeData(snapshot.data());
               set({ 
                 weeklySelection: data.selection || { domingo: [], segunda: [] },
                 lastSelectionDate: data.lastSelectionDate || null
@@ -137,7 +173,7 @@ export const useStore = create<AppState>()(
             const isMasterAdmin = masterEmails.includes(user.email?.toLowerCase() || '');
             
             if (snapshot.exists()) {
-              const data = snapshot.data();
+              const data = sanitizeData(snapshot.data());
               set({ 
                 userRole: data.role || 'user',
                 isAdmin: data.role === 'admin' || isMasterAdmin
@@ -151,15 +187,15 @@ export const useStore = create<AppState>()(
               };
               setDoc(doc(db, userPath), newUser).catch(err => {
                 // If it fails, we still want the app to work, just log it
-                console.error("Failed to initialize user document:", err);
+                console.error("Failed to initialize user document:", err?.message || String(err));
               });
             }
             
             // Register for push notifications
-            registerForPushNotificationsAsync(user.uid).catch(console.error);
+            registerForPushNotificationsAsync(user.uid).catch(e => console.error("Push registration error:", e?.message || String(e)));
           }, (error) => {
             // If this fails, the user might not have a document yet or permission issue
-            console.warn("User role listener failed:", error.message);
+            console.warn("User role listener failed:", error?.message || String(error));
           });
           unsubscribes.push(unsubscribeRole);
 
@@ -167,16 +203,16 @@ export const useStore = create<AppState>()(
           const configPath = 'config/rehearsal';
           const unsubscribeRehearsal = onSnapshot(doc(db, configPath), (snapshot) => {
             if (snapshot.exists()) {
-              set({ rehearsalInfo: snapshot.data() as AppState['rehearsalInfo'] });
+              set({ rehearsalInfo: sanitizeData(snapshot.data()) as AppState['rehearsalInfo'] });
             }
           }, (error) => {
             // Don't throw for rehearsal info, just log
-            console.warn("Rehearsal info listener failed:", error.message);
+            console.warn("Rehearsal info listener failed:", error?.message || String(error));
           });
           unsubscribes.push(unsubscribeRehearsal);
 
-        } catch (error) {
-          console.error("Error setting up Firebase listeners:", error);
+        } catch (error: any) {
+          console.error("Error setting up Firebase listeners:", error?.message || String(error));
         }
 
         return () => {
@@ -346,8 +382,8 @@ export const useStore = create<AppState>()(
           const testDoc = doc(db, 'config', 'connection_test');
           await getDoc(testDoc);
           return true;
-        } catch (error) {
-          console.error('Firebase connection test failed:', error);
+        } catch (error: any) {
+          console.error('Firebase connection test failed:', error?.message || String(error));
           return false;
         }
       },

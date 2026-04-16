@@ -29,11 +29,15 @@ export default function Login() {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
       }
     } catch (error: any) {
-      console.error('Auth Error:', error);
+      const errorCode = error?.code || 'unknown';
+      const errorMessage = error?.message || String(error);
+      
+      console.error(`Auth Error [${errorCode}]: ${errorMessage}`);
+      
       let message = 'Ocorreu um erro na autenticação. Tente novamente.';
       
       // Handle specific Firebase Auth errors
-      switch (error.code) {
+      switch (errorCode) {
         case 'auth/user-not-found':
           message = 'Usuário não encontrado. Verifique o e-mail.';
           break;
@@ -49,6 +53,9 @@ export default function Login() {
         case 'auth/weak-password':
           message = 'A senha deve ter pelo menos 6 caracteres.';
           break;
+        case 'auth/operation-not-allowed':
+          message = 'O login com E-mail/Senha não está habilitado. Verifique no Console do Firebase (Projeto: gen-lang-client-0569954161) em Authentication > Sign-in method se "E-mail/senha" está como "Ativado". Nota: Não é o "Link do e-mail".';
+          break;
         case 'auth/network-request-failed':
           message = 'Falha na conexão. Verifique sua internet.';
           break;
@@ -56,7 +63,7 @@ export default function Login() {
           message = 'Muitas tentativas. Tente novamente mais tarde.';
           break;
         default:
-          message = error.message || message;
+          message = errorMessage;
       }
       
       Alert.alert('Falha na Autenticação', message);
@@ -70,11 +77,15 @@ export default function Login() {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
-      console.error('Google Login Error:', error);
+      const errorCode = error?.code || 'unknown';
+      const errorMessage = error?.message || String(error);
+      
+      console.error(`Google Login Error [${errorCode}]: ${errorMessage}`);
+      
       let message = 'Erro ao entrar com Google. Tente novamente.';
-      if (error.code === 'auth/popup-closed-by-user') message = 'O login foi cancelado.';
-      if (error.code === 'auth/cancelled-popup-request') message = 'A solicitação de login foi cancelada.';
-      if (error.code === 'auth/popup-blocked') message = 'O popup de login foi bloqueado pelo navegador.';
+      if (errorCode === 'auth/popup-closed-by-user') message = 'O login foi cancelado.';
+      if (errorCode === 'auth/cancelled-popup-request') message = 'A solicitação de login foi cancelada.';
+      if (errorCode === 'auth/popup-blocked') message = 'O popup de login foi bloqueado pelo navegador.';
       
       Alert.alert('Google Login', message);
     } finally {
@@ -437,16 +448,6 @@ export default function Login() {
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={async () => {
-                    const { testFirebaseConnection } = useStore.getState();
-                    const ok = await testFirebaseConnection();
-                    Alert.alert('Teste de Conexão', ok ? 'Conectado com sucesso ao Firebase! ✅' : 'Falha na conexão. Verifique as chaves e a internet. ❌');
-                  }}
-                  style={{ marginTop: 20, opacity: 0.5 }}
-                >
-                  <Text style={{ fontSize: 10, color: colors.subtitle, textAlign: 'center' }}>Testar Conexão com Servidor</Text>
-                </TouchableOpacity>
               </MotiView>
               
               <MotiView 
