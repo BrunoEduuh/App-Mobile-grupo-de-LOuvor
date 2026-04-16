@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Alert, ActivityIndicator, ScrollView, Image, ImageBackground } from 'react-native';
 import { MotiView } from 'moti';
-import { auth } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, googleProvider } from '../lib/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { Anchor, Mail, Lock, LogIn, UserPlus, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useStore } from '../store/useStore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,18 +24,40 @@ export default function Login() {
     setLoading(true);
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, email.trim(), password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, email.trim(), password);
       }
     } catch (error: any) {
-      console.error(error);
+      console.error('Auth Error:', error);
       let message = 'Ocorreu um erro na autenticação. Tente novamente.';
-      if (error.code === 'auth/user-not-found') message = 'Usuário não encontrado. Verifique o e-mail.';
-      if (error.code === 'auth/wrong-password') message = 'Senha incorreta. Tente novamente.';
-      if (error.code === 'auth/email-already-in-use') message = 'Este e-mail já está em uso por outro ministro.';
-      if (error.code === 'auth/invalid-email') message = 'O formato do e-mail é inválido.';
-      if (error.code === 'auth/weak-password') message = 'A senha deve ter pelo menos 6 caracteres.';
+      
+      // Handle specific Firebase Auth errors
+      switch (error.code) {
+        case 'auth/user-not-found':
+          message = 'Usuário não encontrado. Verifique o e-mail.';
+          break;
+        case 'auth/wrong-password':
+          message = 'Senha incorreta. Tente novamente.';
+          break;
+        case 'auth/email-already-in-use':
+          message = 'Este e-mail já está em uso por outro ministro.';
+          break;
+        case 'auth/invalid-email':
+          message = 'O formato do e-mail é inválido.';
+          break;
+        case 'auth/weak-password':
+          message = 'A senha deve ter pelo menos 6 caracteres.';
+          break;
+        case 'auth/network-request-failed':
+          message = 'Falha na conexão. Verifique sua internet.';
+          break;
+        case 'auth/too-many-requests':
+          message = 'Muitas tentativas. Tente novamente mais tarde.';
+          break;
+        default:
+          message = error.message || message;
+      }
       
       Alert.alert('Falha na Autenticação', message);
     } finally {
@@ -43,7 +66,20 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    Alert.alert('Google Login', 'O login com Google em ambiente nativo requer configuração adicional do Firebase Google Auth SDK.');
+    setLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      console.error('Google Login Error:', error);
+      let message = 'Erro ao entrar com Google. Tente novamente.';
+      if (error.code === 'auth/popup-closed-by-user') message = 'O login foi cancelado.';
+      if (error.code === 'auth/cancelled-popup-request') message = 'A solicitação de login foi cancelada.';
+      if (error.code === 'auth/popup-blocked') message = 'O popup de login foi bloqueado pelo navegador.';
+      
+      Alert.alert('Google Login', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const styles = React.useMemo(() => StyleSheet.create({
@@ -399,6 +435,17 @@ export default function Login() {
                       {isLogin ? 'Cadastre-se' : 'Entrar'}
                     </Text>
                   </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    const { testFirebaseConnection } = useStore.getState();
+                    const ok = await testFirebaseConnection();
+                    Alert.alert('Teste de Conexão', ok ? 'Conectado com sucesso ao Firebase! ✅' : 'Falha na conexão. Verifique as chaves e a internet. ❌');
+                  }}
+                  style={{ marginTop: 20, opacity: 0.5 }}
+                >
+                  <Text style={{ fontSize: 10, color: colors.subtitle, textAlign: 'center' }}>Testar Conexão com Servidor</Text>
                 </TouchableOpacity>
               </MotiView>
               

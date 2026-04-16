@@ -46,35 +46,41 @@ export const database = getDatabase(app);
 export const auth = getAuth(app);
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser ? String(auth.currentUser.uid) : 'not-logged-in',
-      email: auth.currentUser ? String(auth.currentUser.email) : null,
-      emailVerified: !!auth.currentUser?.emailVerified,
-      isAnonymous: !!auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId ? String(auth.currentUser.tenantId) : null,
-      providerInfo: auth.currentUser?.providerData.map(p => ({
-        providerId: String(p.providerId || ''),
-        displayName: p.displayName ? String(p.displayName) : null,
-        email: p.email ? String(p.email) : null,
-        photoUrl: p.photoURL ? String(p.photoURL) : null
-      })) || []
-    },
+  // Extract error message safely without any risk of circularity
+  let errorMessage = 'Unknown error';
+  
+  if (error && typeof error === 'object') {
+    if ('message' in error && typeof error.message === 'string') {
+      errorMessage = error.message;
+    } else {
+      errorMessage = String(error);
+    }
+  } else {
+    errorMessage = String(error || 'Unknown error');
+  }
+
+  const errInfo = {
+    error: errorMessage,
     operationType,
-    path
+    path,
+    uid: auth.currentUser?.uid || 'not-logged-in'
   };
 
-  // Log the object directly for better debugging in the console
+  // Log the object directly - browsers handle circularity in console.error
   console.error('Firestore Error Details:', errInfo);
 
-  // Throw a JSON string as per system instructions, but safely
+  // Throw a simple JSON string with NO complex objects
   try {
-    const errorJson = JSON.stringify(errInfo);
+    const errorJson = JSON.stringify({
+      message: errorMessage,
+      type: operationType,
+      path: path,
+      code: (error as any)?.code || 'unknown'
+    });
     throw new Error(errorJson);
   } catch (e) {
-    // If stringify fails, throw a simpler error
-    throw new Error(`Firestore ${operationType} error at ${path}: ${errInfo.error}`);
+    // Fallback if stringify fails for any reason
+    throw new Error(`Firestore ${operationType} error: ${errorMessage}`);
   }
 }
 

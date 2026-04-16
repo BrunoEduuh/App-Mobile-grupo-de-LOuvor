@@ -94,25 +94,12 @@ export const useStore = create<AppState>()(
       })),
       setUser: (user) => set({ user }),
       syncWithFirebase: () => {
-        let unsubscribeListeners: (() => void) | null = null;
+        const { user } = get();
+        if (!user) return () => {};
 
-        const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-          // Clean up previous listeners if they exist
-          if (unsubscribeListeners) {
-            unsubscribeListeners();
-            unsubscribeListeners = null;
-          }
+        let unsubscribes: (() => void)[] = [];
 
-          if (!firebaseUser) {
-            set({ 
-              songs: [], 
-              weeklySelection: { domingo: [], segunda: [] },
-              userRole: null,
-              isAdmin: false
-            });
-            return;
-          }
-
+        try {
           // Listen for songs (louvores)
           const songsPath = 'louvores';
           const songsQuery = query(collection(db, songsPath), orderBy('playCount', 'desc'));
@@ -126,6 +113,7 @@ export const useStore = create<AppState>()(
           }, (error) => {
             handleFirestoreError(error, OperationType.LIST, songsPath);
           });
+          unsubscribes.push(unsubscribeSongs);
 
           // Listen for weekly selection (escalas)
           const weeklyPath = 'escalas';
@@ -140,12 +128,13 @@ export const useStore = create<AppState>()(
           }, (error) => {
             handleFirestoreError(error, OperationType.GET, `${weeklyPath}/current`);
           });
+          unsubscribes.push(unsubscribeWeekly);
 
-          // Listen for user role
-          const userPath = `users/${firebaseUser.uid}`;
+          // Listen for user role and initialize if needed
+          const userPath = `users/${user.uid}`;
           const unsubscribeRole = onSnapshot(doc(db, userPath), (snapshot) => {
-            const masterEmails = ['duuhbr12@gmail.com', 'Bruno_mendes_silva@outlook.com'];
-            const isMasterAdmin = masterEmails.includes(firebaseUser.email?.toLowerCase() || '');
+            const masterEmails = ['duuhbr12@gmail.com', 'bruno_mendes_silva@outlook.com'];
+            const isMasterAdmin = masterEmails.includes(user.email?.toLowerCase() || '');
             
             if (snapshot.exists()) {
               const data = snapshot.data();
@@ -156,20 +145,23 @@ export const useStore = create<AppState>()(
             } else {
               // Initialize user if not exists
               const newUser = {
-                email: firebaseUser.email,
+                email: user.email,
                 role: isMasterAdmin ? 'admin' : 'user',
                 createdAt: Date.now()
               };
               setDoc(doc(db, userPath), newUser).catch(err => {
-                handleFirestoreError(err, OperationType.CREATE, userPath);
+                // If it fails, we still want the app to work, just log it
+                console.error("Failed to initialize user document:", err);
               });
             }
             
             // Register for push notifications
-            registerForPushNotificationsAsync(firebaseUser.uid).catch(console.error);
+            registerForPushNotificationsAsync(user.uid).catch(console.error);
           }, (error) => {
-            handleFirestoreError(error, OperationType.GET, userPath);
+            // If this fails, the user might not have a document yet or permission issue
+            console.warn("User role listener failed:", error.message);
           });
+          unsubscribes.push(unsubscribeRole);
 
           // Listen for rehearsal info
           const configPath = 'config/rehearsal';
@@ -178,21 +170,17 @@ export const useStore = create<AppState>()(
               set({ rehearsalInfo: snapshot.data() as AppState['rehearsalInfo'] });
             }
           }, (error) => {
-            handleFirestoreError(error, OperationType.GET, configPath);
+            // Don't throw for rehearsal info, just log
+            console.warn("Rehearsal info listener failed:", error.message);
           });
+          unsubscribes.push(unsubscribeRehearsal);
 
-          // Store cleanup for all listeners
-          unsubscribeListeners = () => {
-            unsubscribeSongs();
-            unsubscribeWeekly();
-            unsubscribeRole();
-            unsubscribeRehearsal();
-          };
-        });
+        } catch (error) {
+          console.error("Error setting up Firebase listeners:", error);
+        }
 
         return () => {
-          unsubscribeAuth();
-          if (unsubscribeListeners) unsubscribeListeners();
+          unsubscribes.forEach(unsub => unsub());
         };
       },
       addSong: async (songData) => {
