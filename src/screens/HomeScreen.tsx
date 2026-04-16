@@ -7,7 +7,11 @@ import StudyModal from '../components/StudyModal';
 import { useTheme } from '../context/ThemeContext';
 import { REFLECTIONS, MUSICAL_TIPS } from '../constants/content';
 
-export default function HomeScreen() {
+interface HomeScreenProps {
+  onNavigate?: (tab: 'home' | 'library' | 'favorites' | 'settings') => void;
+}
+
+export default function HomeScreen({ onNavigate }: HomeScreenProps) {
   const { 
     currentVerse, 
     setRandomVerse, 
@@ -528,7 +532,11 @@ export default function HomeScreen() {
         </MotiView>
 
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity 
+            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('favorites')}
+          >
             <View style={[styles.statIconBg, { backgroundColor: isDark ? '#121212' : '#E0F2FE' }]}>
               <Music size={18} color={isDark ? colors.primary : '#0284C7'} />
             </View>
@@ -536,7 +544,7 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { color: colors.text }]}>{songs.length}</Text>
               <Text style={[styles.statLabel, { color: colors.subtitle }]}>LOUVORES</Text>
             </View>
-          </View>
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}

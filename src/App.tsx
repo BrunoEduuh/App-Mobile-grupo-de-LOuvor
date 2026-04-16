@@ -78,11 +78,11 @@ function AppContent() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home': return <HomeScreen />;
+      case 'home': return <HomeScreen onNavigate={setActiveTab} />;
       case 'library': return <Escala />;
       case 'favorites': return <Biblioteca />;
       case 'settings': return <Settings />;
-      default: return <HomeScreen />;
+      default: return <HomeScreen onNavigate={setActiveTab} />;
     }
   };
 
