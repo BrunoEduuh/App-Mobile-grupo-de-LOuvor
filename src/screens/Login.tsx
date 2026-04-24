@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Alert, ActivityIndicator, ScrollView, Image, ImageBackground } from 'react-native';
-import { MotiView } from 'moti';
 import { auth, googleProvider } from '../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { Anchor, Mail, Lock, LogIn, UserPlus, ChevronRight } from 'lucide-react-native';
@@ -296,10 +295,8 @@ export default function Login() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <ImageBackground 
-        source={{ uri: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80' }}
-        style={styles.backgroundImage}
-        blurRadius={isDark ? 10 : 5}
+      <View 
+        style={[styles.backgroundImage, { backgroundColor: isDark ? '#020617' : '#F1F5F9' }]}
       >
         <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(2, 62, 138, 0.85)' : 'rgba(255, 255, 255, 0.7)' }]}>
           <ScrollView 
@@ -307,29 +304,17 @@ export default function Login() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.content}>
-              <MotiView 
-                from={{ opacity: 0, scale: 0.8, translateY: -20 }}
-                animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 1000 }}
-                style={styles.header}
-              >
-                <View style={[styles.logoBg, { backgroundColor: 'transparent' }]}>
-                  <Image 
-                    source={{ uri: "https://storage.googleapis.com/birdseye-free-public/2025/04/14/13/11/input_file_0.png" }} 
-                    style={{ width: 150, height: 150 }}
-                    resizeMode="contain"
-                  />
+              <View style={styles.header}>
+                <View style={[styles.logoBg, { backgroundColor: isDark ? '#1E293B' : '#F0F9FF', width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Anchor size={60} color={colors.primary} />
                 </View>
                 <Text style={[styles.title, { color: isDark ? 'white' : colors.text }]}>Firmados em Cristo</Text>
                 <View style={styles.badge}>
                   <Text style={[styles.badgeText, { color: colors.primary }]}>MINISTÉRIO DE LOUVOR</Text>
                 </View>
-              </MotiView>
+              </View>
 
-              <MotiView 
-                from={{ opacity: 0, translateY: 40 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 800, delay: 300 }}
+              <View 
                 style={{ 
                   ...styles.card, 
                   backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
@@ -428,11 +413,9 @@ export default function Login() {
                   disabled={loading}
                   style={[styles.googleButton, { borderColor: colors.border, backgroundColor: isDark ? '#1E293B' : '#FFFFFF' }]}
                 >
-                  <Image 
-                    source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} 
-                    style={styles.googleIcon}
-                    referrerPolicy="no-referrer"
-                  />
+                  <View style={[styles.googleIcon, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#DB4437' }}>G</Text>
+                  </View>
                   <Text style={[styles.googleButtonText, { color: colors.text }]}>Google Account</Text>
                 </TouchableOpacity>
 
@@ -448,23 +431,18 @@ export default function Login() {
                   </Text>
                 </TouchableOpacity>
 
-              </MotiView>
+              </View>
               
-              <MotiView 
-                from={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ type: 'timing', duration: 1000, delay: 1000 }}
-                style={styles.footer}
-              >
+              <View style={styles.footer}>
                 <Text style={[styles.footerText, { color: isDark ? 'rgba(255,255,255,0.6)' : colors.subtitle }]}>
                   "Tudo o que tem fôlego louve ao Senhor."
                 </Text>
                 <Text style={[styles.footerRef, { color: colors.primary }]}>Salmos 150:6</Text>
-              </MotiView>
+              </View>
             </View>
           </ScrollView>
         </View>
-      </ImageBackground>
+      </View>
     </View>
   );
 }

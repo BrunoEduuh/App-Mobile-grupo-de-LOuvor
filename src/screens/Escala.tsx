@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StatusBar, Modal, ScrollView, StyleSheet, Linking, SafeAreaView, Alert } from 'react-native';
-import { MotiView } from 'moti';
 import { Search, Music, ChevronRight, X, Heart, Play, ArrowLeft, BookOpen, Edit3, Save, Calendar, Clock, RefreshCw } from 'lucide-react-native';
 import { useStore, Song } from '../store/useStore';
 import StudyModal from '../components/StudyModal';
@@ -81,11 +80,7 @@ export default function Escala() {
     const isFavorite = favorites.includes(item.id);
     
     return (
-      <MotiView
-        from={{ opacity: 0, translateY: 20 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 500, delay: index * 100 }}
-      >
+      <View>
         <TouchableOpacity 
           style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border }]}
           activeOpacity={0.7}
@@ -132,7 +127,7 @@ export default function Escala() {
             </View>
           </View>
         </TouchableOpacity>
-      </MotiView>
+      </View>
     );
   };
 
@@ -364,12 +359,7 @@ export default function Escala() {
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
-      <MotiView 
-        from={{ opacity: 0, translateY: -10 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 600 }}
-        style={styles.header}
-      >
+      <View style={styles.header}>
         <View style={styles.headerTitleRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <View style={[styles.headerIconBg, { backgroundColor: colors.primary }]}>
@@ -387,7 +377,7 @@ export default function Escala() {
             </TouchableOpacity>
           )}
         </View>
-      </MotiView>
+      </View>
 
       <FlatList
         style={{ flex: 1 }}

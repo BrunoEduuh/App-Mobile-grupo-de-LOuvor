@@ -17,7 +17,7 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
     tabBar: {
       flexDirection: 'row',
       borderTopWidth: 1,
-      paddingTop: 12,
+      paddingTop: 8,
       justifyContent: 'space-around',
       alignItems: 'center',
       // Sombra no topo (iOS)
@@ -51,8 +51,8 @@ export default function BottomTabs({ activeTab, onTabPress }: BottomTabsProps) {
     <View style={[
       styles.tabBar, 
       { 
-        paddingBottom: Math.max(insets.bottom, 16),
-        height: 64 + Math.max(insets.bottom, 16),
+        paddingBottom: Math.max(insets.bottom, 8),
+        height: 56 + Math.max(insets.bottom, 8),
         backgroundColor: colors.card,
         borderTopColor: colors.border
       }

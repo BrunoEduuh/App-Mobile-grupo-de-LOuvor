@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StatusBar, Modal, ScrollView, TextInput, SafeAreaView, StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
 import { Heart, Music, ChevronRight, Play, X, BookOpen, Edit3, ArrowLeft, Plus, Trash2, Search, Link as LinkIcon, AlertTriangle } from 'lucide-react-native';
 import { useStore, Song } from '../store/useStore';
 import StudyModal from '../components/StudyModal';
@@ -144,7 +143,7 @@ export default function Biblioteca() {
         setShowManualSearchConfirm(true);
       }
     } catch (error) {
-      console.error("Erro na busca otimizada: " + (error instanceof Error ? error.message : String(error)));
+      console.warn("Erro na busca otimizada: " + (error instanceof Error ? error.message : String(error)));
       setShowManualSearchConfirm(true);
     } finally {
       setIsSearchingLyrics(false);
@@ -182,11 +181,7 @@ export default function Biblioteca() {
   };
 
   const SongItem = ({ item, index }: { item: Song; index: number }) => (
-    <MotiView
-      from={{ opacity: 0, translateY: 20 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'timing', duration: 500, delay: index * 50 }}
-    >
+    <View>
       <TouchableOpacity 
         style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border }]}
         activeOpacity={0.7}
@@ -238,7 +233,7 @@ export default function Biblioteca() {
           )}
         </View>
       </TouchableOpacity>
-    </MotiView>
+    </View>
   );
 
   const styles = useMemo(() => StyleSheet.create({
@@ -580,12 +575,7 @@ export default function Biblioteca() {
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
-      <MotiView 
-        from={{ opacity: 0, translateY: -10 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 600 }}
-        style={styles.header}
-      >
+      <View style={styles.header}>
         <View style={styles.headerTitleRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <View style={[styles.headerIconBg, { backgroundColor: colors.primary }]}>
@@ -594,7 +584,7 @@ export default function Biblioteca() {
             <Text style={[styles.headerTitle, { color: colors.text }]}>Biblioteca</Text>
           </View>
           {isAdmin && songs.length > 0 && (
-            <TouchableOpacity onPress={handleClearAll} style={[styles.clearAllBtn, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}>
+            <TouchableOpacity onPress={() => handleClearAll()} style={[styles.clearAllBtn, { backgroundColor: isDark ? '#450A0A' : '#FEF2F2' }]}>
               <Trash2 size={16} color="#EF4444" />
               <Text style={styles.clearAllText}>Limpar</Text>
             </TouchableOpacity>
@@ -612,7 +602,7 @@ export default function Biblioteca() {
             onChangeText={setSearchQuery}
           />
         </View>
-      </MotiView>
+      </View>
 
       <FlatList
         style={{ flex: 1 }}
@@ -631,12 +621,7 @@ export default function Biblioteca() {
         contentContainerStyle={styles.listContent}
       />
 
-      <MotiView 
-        from={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', damping: 15, delay: 1000 }}
-        style={styles.fabContainer}
-      >
+      <View style={styles.fabContainer}>
         <TouchableOpacity 
           onPress={() => setIsModalOpen(true)}
           style={[styles.fab, { backgroundColor: isDark ? colors.blue : colors.primary, shadowColor: isDark ? colors.blue : colors.primary }]}
@@ -644,7 +629,7 @@ export default function Biblioteca() {
         >
           <Plus size={24} color={isDark ? 'white' : '#FFD700'} strokeWidth={3} />
         </TouchableOpacity>
-      </MotiView>
+      </View>
 
       <Modal
         visible={isModalOpen}
@@ -679,9 +664,6 @@ export default function Biblioteca() {
                     placeholderTextColor={colors.subtitle}
                     value={newSong.title}
                     onChangeText={(text) => setNewSong({ ...newSong, title: text })}
-                    onBlur={() => {
-                      if (newSong.title.includes(' - ')) searchVagalumeLyrics();
-                    }}
                   />
                 </View>
 
@@ -704,7 +686,7 @@ export default function Biblioteca() {
                     <Text style={[styles.inputLabel, { color: colors.secondary, fontSize: Math.max(9, settings.fontSize * 0.5) }]}>Letra da Música</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       {isSearchingLyrics && <Text style={{ fontSize: sfs(10), color: colors.secondary, fontWeight: 'bold' }}>Buscando...</Text>}
-                      <TouchableOpacity onPress={searchVagalumeLyrics} style={{ backgroundColor: isDark ? colors.blue : '#F0F9FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                      <TouchableOpacity onPress={() => searchVagalumeLyrics()} style={{ backgroundColor: isDark ? colors.blue : '#F0F9FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
                         <Text style={{ fontSize: sfs(10), color: isDark ? 'white' : colors.secondary, fontWeight: '900' }}>BUSCAR AGORA</Text>
                       </TouchableOpacity>
                     </View>
@@ -745,7 +727,7 @@ export default function Biblioteca() {
                 </View>
 
                 <TouchableOpacity
-                  onPress={handleAddSong}
+                  onPress={() => handleAddSong()}
                   style={[styles.submitButton, { backgroundColor: isDark ? colors.blue : colors.primary }]}
                 >
                   <Text style={[styles.submitButtonText, { color: 'white', fontSize: sfs(14) }]}>Adicionar Louvor</Text>
@@ -831,7 +813,7 @@ export default function Biblioteca() {
                   <Text style={[styles.cancelBtnText, { color: colors.subtitle, fontSize: sfs(12) }]}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  onPress={confirmConfig?.onConfirm}
+                  onPress={() => confirmConfig?.onConfirm?.()}
                   style={styles.confirmBtn}
                 >
                   <Text style={[styles.confirmBtnText, { fontSize: sfs(12) }]}>Confirmar</Text>

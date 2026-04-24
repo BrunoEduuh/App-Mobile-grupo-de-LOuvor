@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, ScrollView, Linking, Modal, FlatList, Image } from 'react-native';
-import { MotiView } from 'moti';
 import { Anchor, Sparkles, RefreshCw, Calendar, Music, Play, ChevronRight, Unlock, Lightbulb, BarChart3, Heart, ArrowLeft } from 'lucide-react-native';
 import { useStore, Song } from '../store/useStore';
 import StudyModal from '../components/StudyModal';
@@ -434,31 +433,17 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
         // @ts-ignore - className is supported in react-native-web
         className="scrollbar-hide"
       >
-        <MotiView 
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 800 }}
-          style={styles.header}
-        >
+        <View style={styles.header}>
           <View>
             <Text style={[styles.welcomeText, { color: colors.subtitle, fontSize: sfs(14) }]}>Paz do Senhor,</Text>
             <Text style={[styles.brandText, { color: colors.text, fontSize: sfs(24) }]}>Firmados em Cristo</Text>
           </View>
-          <TouchableOpacity style={[styles.profileIcon, { backgroundColor: 'transparent' }]}>
-            <Image 
-              source={{ uri: "https://storage.googleapis.com/birdseye-free-public/2025/04/14/13/11/input_file_0.png" }} 
-              style={{ width: 40, height: 40 }}
-              resizeMode="contain"
-            />
+          <TouchableOpacity style={[styles.profileIcon, { backgroundColor: isDark ? '#1E293B' : '#F0F9FF' }]}>
+            <Anchor size={24} color={colors.primary} />
           </TouchableOpacity>
-        </MotiView>
+        </View>
 
-        <MotiView 
-          from={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'timing', duration: 1000, delay: 200 }}
-          style={[styles.verseCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        >
+        <View style={[styles.verseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.verseHeader}>
             <Sparkles size={16} color={isDark ? colors.blue : "#FFD700"} />
             <Text style={[styles.verseLabel, { color: isDark ? "#FFD700" : colors.secondary, fontSize: sfs(10) }]}>PALAVRA DO DIA</Text>
@@ -470,14 +455,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               <RefreshCw size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
-        </MotiView>
+        </View>
 
-        <MotiView 
-          from={{ opacity: 0, translateX: -50 }}
-          animate={{ opacity: 1, translateX: 0 }}
-          transition={{ type: 'timing', duration: 800, delay: 400 }}
-          style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        >
+        <View style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.actionIconBg, { backgroundColor: isDark ? '#121212' : '#F0F9FF' }]}>
             <Calendar size={24} color={colors.primary} />
           </View>
@@ -486,18 +466,13 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             <Text style={[styles.actionSubtitle, { color: colors.subtitle, fontSize: sfs(14) }]}>{rehearsalInfo.day}, às {rehearsalInfo.time}</Text>
             <Text style={[styles.actionLegenda, { color: colors.subtitle, fontSize: sfs(10) }]}>Repertório confirmado para ensaio de {rehearsalInfo.day.split('-')[0].toLowerCase()}</Text>
           </View>
-        </MotiView>
+        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.secondary, fontSize: sfs(10) }]}>Escala da Semana (Ciclo 7 Dias)</Text>
         </View>
 
-        <MotiView 
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 800, delay: 600 }}
-          style={styles.daysContainer}
-        >
+        <View style={styles.daysContainer}>
           <View style={styles.dayColumn}>
             <View style={[styles.dayHeader, { backgroundColor: colors.text }]}>
               <Text style={[styles.dayLabel, { color: colors.card }]}>DOMINGO (2)</Text>
@@ -515,21 +490,16 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               <SongMiniCard key={song.id} song={song} />
             ))}
           </View>
-        </MotiView>
+        </View>
 
-        <MotiView 
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'timing', duration: 800, delay: 800 }}
-          style={[styles.reflectionCard, { backgroundColor: isDark ? colors.card : colors.text, borderColor: isDark ? colors.primary : 'transparent', borderWidth: isDark ? 1 : 0 }]}
-        >
+        <View style={[styles.reflectionCard, { backgroundColor: isDark ? colors.card : colors.text, borderColor: isDark ? colors.primary : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
           <View style={styles.reflectionHeader}>
             <Lightbulb size={18} color="#FFD700" />
             <Text style={[styles.reflectionLabel, { color: '#FFD700', fontSize: sfs(10) }]}>REFLEXÃO PARA O MINISTRO</Text>
           </View>
           <Text style={[styles.reflectionText, { color: isDark ? colors.text : colors.card, fontSize: sfs(14) }]}>"{reflection.text}"</Text>
           <Text style={[styles.reflectionAuthor, { color: isDark ? colors.subtitle : colors.subtitle, fontSize: sfs(10) }]}>— {reflection.author}</Text>
-        </MotiView>
+        </View>
 
         <View style={styles.statsRow}>
           <TouchableOpacity 
